@@ -13,33 +13,13 @@ def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
   return df[df ['Program'].isin(filters['Program'])]
 
 
-def fetch_and_process(table, start_dt:str, end_dt:str,
-                      cached_data:pd.DataFrame, 
-                      download_filepath:str="", filters={}, refresh=True):
 
-  # cache data for all programs  - to parquet
-  atom_df, was_refreshed = io.get_data(table
-                    ,int(start_dt), int(end_dt)
-                    , cached_data
-                    , download_filepath
-                    , filters=filters                
-                    , refresh=refresh)
+def get_filename(prefix:str ,start:str, end:str, suffix:str="", sep:str ="_"):
   
-  if not has_data(atom_df):
-     logging.info("Returning Empty Dataframe.")
-     return pd.DataFrame()
-  
-  # atom_df = process(raw_df)
-  if was_refreshed:    
-    io.write_parquet(atom_df, download_filepath)# f"{processed_folder}/ATOM_{start_dt}-{end_dt}-AllPrograms.parquet")
-  return atom_df
+  period_range = f"{start}-{end}"
+  fname =  f"{prefix}{sep}{period_range}{sep}{suffix}"
+  return fname
 
-# def get_processed_path(start:str, end:str):
-  
-#   period_range = f"{asmt_st}-{asmt_end}"
-#   fname =  f'ATOM_{period_range}_AllPrograms'
-#   processed_filepath = f"{processed_folder}/{fname}"
-#   return processed_filepath
 
 def import_data(asmt_st:str, asmt_end:str
                 ,purpose:Purpose, refresh:bool=True
@@ -65,8 +45,10 @@ def import_data(asmt_st:str, asmt_end:str
   preprocessed_folder = 'data/in'
   filters = data_config.ATOM_DB_filters[purpose]
   
-  period_range = f"{asmt_st}-{asmt_end}"
-  fname =  f'ATOM_{period_range}_AllPrograms'
+  # period_range = f"{asmt_st}-{asmt_end}"
+  fname = get_filename("ATOM", asmt_st
+                       , asmt_end, "AllPrograms")
+                       
   processed_filepath = f"{processed_folder}/{fname}"
   
   logging.info(f"Attempting to load processed data from {processed_filepath}")
@@ -78,10 +60,9 @@ def import_data(asmt_st:str, asmt_end:str
                           ,prefix="ATOM_"
                           )
   if best_start_date and best_end_date:
-    period_range = f"{best_start_date.strftime("%Y%m%d")}-{best_end_date.strftime("%Y%m%d")}"
-
-  fname =  f'ATOM_{period_range}_AllPrograms'
-  processed_filepath = f"{processed_folder}/{fname}.parquet"  
+    fname = get_filename("ATOM", best_start_date.strftime("%Y%m%d")
+                        , best_end_date.strftime("%Y%m%d"), "AllPrograms")
+    
   # TO DO check if recent or needs to be refreshed
 
   if isinstance(processed_df, type(None)) or processed_df.empty:
@@ -100,16 +81,24 @@ def import_data(asmt_st:str, asmt_end:str
       processed_df = io.process_assment(raw_df)
       # use the same start and end date as the raw filename
       if best_start_date and best_end_date:
-        period_range = f"{best_start_date.strftime("%Y%m%d")}-{best_end_date.strftime("%Y%m%d")}"
+        # period_range = f"{best_start_date.strftime("%Y%m%d")}-{best_end_date.strftime("%Y%m%d")}"
+        fname = get_filename("ATOM", best_start_date.strftime("%Y%m%d")
+                        , best_end_date.strftime("%Y%m%d"), "AllPrograms")
 
-      fname =  f'ATOM_{period_range}_AllPrograms'
-      processed_filepath = f"{processed_folder}/{fname}.parquet"
-      io.write_parquet(processed_df,processed_filepath)
+      processed_filepath = f"{processed_folder}/{fname}"
+      io.write_parquet(processed_df,f"{processed_filepath}.parquet")
     else:
-        print("Raw file doesn't exist either. load from DB.")
-        raw_df = io.get_from_source("ATOM", 20220101, 20240505, filters=filters)
-        raw_filename = f"{preprocessed_folder}/{fname}.parquet"
-        io.write_parquet(raw_df,f"{raw_filename}")
+        logging.info("Raw file doesn't exist either. load from DB. " \
+               + "\n Hardcoding 20160701 as start date and today as end date.")
+        today = datetime.now()
+        today_str = today.strftime('%Y%m%d')
+        today_int = int(today_str)
+        
+        raw_df = io.get_from_source("ATOM", 20160701
+                                    , today_int, filters=filters)     
+        fname =   get_filename("ATOM", asmt_st
+                       , today_str, "AllPrograms")        
+        io.write_parquet(raw_df,f"{preprocessed_folder}/{fname}.parquet")
         processed_df = io.process_assment(raw_df)
         # no need to refresh
         return processed_df
@@ -122,20 +111,33 @@ def import_data(asmt_st:str, asmt_end:str
   #   # TODO :
 
   if not refresh:
+    logging.info("Returning cached (processed) assessment data.")
     return processed_df
   # Data has been loaded in processed_df, but needs refresh. 
   # refresh only processed file?
-
-  processed_df = fetch_and_process(table='ATOM'
-                          ,start_dt=asmt_st
-                          ,end_dt=asmt_end
-                          , cached_data=processed_df
-                          , download_filepath=f"{processed_filepath}.parquet"
-                          , filters=filters
-                          , refresh=refresh)  
-        
-  return processed_df
+  processed_filepath = f"{processed_folder}/{fname}" 
+  fetched_df, was_refreshed = io.get_data('ATOM'
+                    ,int(asmt_st), int(asmt_end)
+                    , processed_df
+                    , f"{processed_filepath}.parquet"
+                    , filters=filters                
+                    , refresh=refresh)
   
+  # if not has_data(atom_df):
+  #    logging.info("Returning Empty Dataframe.")
+  #    return pd.DataFrame()
+  
+  if was_refreshed:
+    today = datetime.today()
+    today_str = today.strftime("%Y%m%d")
+    fname = get_filename("ATOM", asmt_st
+                       , today_str, "AllPrograms")
+    
+    io.write_parquet(fetched_df, f"{processed_folder}/{fname}.parquet")
+    processed_df = fetched_df
+    logging.info("Caching and returning refreshed assessment data.")
+
+  return processed_df
 
   
 if __name__ == '__main__':

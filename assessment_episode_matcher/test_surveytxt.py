@@ -2,19 +2,18 @@
 from datetime import date
 # from pathlib import Path
 import pandas as pd
-from utils.environment import ConfigManager, ConfigKeys
-from matching import main as match_helper
-from matching.errors import process_errors_warnings
-from mytypes import DataKeys as dk
+from assessment_episode_matcher.utils.environment import ConfigManager, ConfigKeys
+from assessment_episode_matcher.matching import main as match_helper
+from assessment_episode_matcher.matching.errors import process_errors_warnings
 
-# from data_prep import prep_dataframe_nada
-# from exporters import NADAbase as out_exporter
-from importers import episodes as imptr_episodes
-from importers import assessments as imptr_atoms
-from exporters.main import CSVExporter as AuditExporter
-# from exporters.main import AzureBlobExporter as AuditExporter
-import utils.df_ops_base as utdf
-from mytypes import DataKeys as dk
+# from assessment_episode_matcher.data_prep import prep_dataframe_nada
+# from assessment_episode_matcher.exporters import NADAbase as out_exporter
+from assessment_episode_matcher.importers import episodes as imptr_episodes
+from assessment_episode_matcher.importers import assessments as imptr_atoms
+from assessment_episode_matcher.exporters.main import CSVExporter as AuditExporter
+# from assessment_episode_matcher.exporters.main import AzureBlobExporter as AuditExporter
+import assessment_episode_matcher.utils.df_ops_base as utdf
+from assessment_episode_matcher.mytypes import DataKeys as dk
 
 """
  TODO:
@@ -149,7 +148,10 @@ def match_and_get_issues(e_df, a_df, inperiod_atomslk_notin_ep, inperiod_epslk_n
     
 
 def main2():
-    ConfigManager.setup('local')
+    # TODO:
+    # envinronemnt setup : Config setup, Expected Directories create, logging setup
+
+    ConfigManager.setup('dev')
     cfg = ConfigManager().config
     slack_for_matching = int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK, 7))
     refresh_assessments = False #cfg.get( ConfigKeys.REFRESH_ATOM_DATA, True )

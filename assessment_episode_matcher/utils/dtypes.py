@@ -125,7 +125,20 @@ def define_all_categories(df:pd.DataFrame):
   
 ###############################################
 
-def convert_to_datetime(series:pd.Series, format:str='%Y%m%d', fill_blanks=True):# -> pd.Series:
+def convert_float_to_datetime(series:pd.Series, format:str='%Y%m%d') -> pd.Series:
+  """
+    float:20240101.0 -> pandas.datetime: 2024-01-01
+    Don't expect blanks. 
+  """
+  datetime_series =  pd.to_datetime(series.astype(int).astype(str)
+                                    , format=format, errors='coerce')#.dt.date
+
+  date_series = datetime_series.dt.date
+
+  return date_series
+
+
+def convert_to_datetime(series:pd.Series, format:str='%Y%m%d', fill_blanks=True) -> pd.Series:
   """
   Blanks are filled with today/now datetime
   """

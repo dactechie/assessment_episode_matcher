@@ -1,10 +1,9 @@
 from datetime import date
 import pandas as pd
-from exporters.main import DataExporter
-import utils.df_ops_base as utdf
-from mytypes import IssueType, IssueLevel
-from mytypes import DataKeys as dk
-from configs import audit as audit_cfg
+from assessment_episode_matcher.exporters.main import DataExporter
+import assessment_episode_matcher.utils.df_ops_base as utdf
+from assessment_episode_matcher.mytypes import IssueType, IssueLevel, DataKeys as dk
+from assessment_episode_matcher.configs import audit as audit_cfg
 
 def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2
                             ,period_start:date, period_end:date

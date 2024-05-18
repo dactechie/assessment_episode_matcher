@@ -1,5 +1,5 @@
 from datetime import date
-from utils.dtypes import date_to_str
+from assessment_episode_matcher.utils.dtypes import date_to_str
 """
     Merge two dictionaries, excluding keys from the second dictionary.
     Returns a new dictionary with the contents of dict1 and dict2.

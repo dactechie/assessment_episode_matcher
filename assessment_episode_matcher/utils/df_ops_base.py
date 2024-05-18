@@ -188,7 +188,7 @@ def get_non_empty_list_items(df: pd.DataFrame, field_name: str) -> pd.DataFrame:
     return df2
 
 
-def update(df1: pd.DataFrame, df2: pd.DataFrame, on: list[str]) -> pd.DataFrame:
+def update(df1: pd.DataFrame, df2: pd.DataFrame, on: list[str]) -> pd.DataFrame|None:
     """
         Merges two dataframes based on specified key columns, updating common rows and adding new rows from df2 to df1.
 
@@ -241,6 +241,9 @@ def update(df1: pd.DataFrame, df2: pd.DataFrame, on: list[str]) -> pd.DataFrame:
         merged_df[col] = merged_df[col + '_new'].combine_first(merged_df[col])
         merged_df[col] = merged_df[col].fillna(merged_df[col + '_new'])
 
+    if not merged_df[[c for c in merged_df.columns if '_new' in c]].isnull().all().all():
+        return None
+    
     merged_df = merged_df.drop(
         columns=[col + '_new' for col in columns_to_update])
     return merged_df

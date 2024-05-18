@@ -1,5 +1,7 @@
 
-# README 
+# README
+
+Code Stripped out from NADAFuncTools and upgraded.
 
 ## Development (windows)
 

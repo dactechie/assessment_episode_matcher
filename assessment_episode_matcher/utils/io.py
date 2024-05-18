@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 import logging
 import pandas as pd
-from assessment_episode_matcher.utils.dtypes import convert_to_datetime
+from assessment_episode_matcher.utils.dtypes import convert_float_to_datetime
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.azutil.helper import get_results
 
@@ -92,6 +92,11 @@ def get_from_source(table:str, start_date:int, end_date:int
 
 def get_lastmod_utcstr(timestamp:pd.Series) -> str:
   max_timestamp = max(timestamp)
+  # # TODO: CHECK THIS:
+  # # although i am doing az fetch > , it may be doing >=
+  # # so adding 1 nano second 
+  smallest_unit = pd.Timedelta(microseconds=1)
+  max_timestamp = max_timestamp + smallest_unit
   s = max_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
   return s
 
@@ -100,8 +105,9 @@ def get_lastmod_utcstr(timestamp:pd.Series) -> str:
 def process_assment(asmt_df:pd.DataFrame) -> pd.DataFrame:
   
   atom_df = asmt_df.rename(columns={'PartitionKey': 'SLK'})
-  atom_df['AssessmentDate'] = convert_to_datetime(atom_df['AssessmentDate'], format='%Y%m%d'
-                                                  , fill_blanks=False)
+  atom_df['AssessmentDate'] = convert_float_to_datetime(
+                                atom_df['AssessmentDate']
+                                , format='%Y%m%d')
   
   return atom_df
 
@@ -125,6 +131,9 @@ def refresh_dataset(df1:pd.DataFrame, df2:pd.DataFrame):
   df2 = df2[df2['IsActive'] == 1].drop(columns=['IsActive'])
 
   merged_updated = utdf.update(df1, df2, on=key_columns)
+  if not merged_updated:
+     logging.info(f"Nothing to merge - no change. New df:\n {df2} ")
+     return None
   merged_len = len(merged_updated)
   logging.info(f" Original len() df: {len(df1)} Merged df length {merged_len}.")
   
@@ -150,6 +159,10 @@ def handle_refresh(df1:pd.DataFrame
       return df2_processed, True
     
     merged_updated = refresh_dataset(df1, df2_processed)
+
+    # even though there was data, nothing ws refreshed
+    if not merged_updated:
+      return df2_processed, False
     
     
     return merged_updated, True
@@ -195,7 +208,9 @@ def get_data(table:str, start_date:int, end_date:int
   return processed_df, True
 
 
-
+# TODO sort by the period: end_date  part ofthe file which would be the latest refreshed date
+# we want the most recent to be on top so when it matches against the func params, 
+# we get the cache file with the latest data
 def load_for_period(path: str, st_yyyymmdd: str
                     , ed_yyyymmdd: str, prefix: str, suffix:str="") \
                       -> tuple[pd.DataFrame, datetime|None, datetime|None]:
@@ -217,6 +232,7 @@ def load_for_period(path: str, st_yyyymmdd: str
 
     # Filter files based on the filename pattern
     matching_files = [file for file in files if file.startswith(prefix) and file.endswith(suffix)]
+    #TODO sort these files 
 
     # Initialize variables to store the best matching file and its date range
     best_match = None

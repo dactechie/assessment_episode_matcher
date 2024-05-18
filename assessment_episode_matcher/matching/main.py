@@ -1,12 +1,12 @@
 import logging
 from datetime import date
 import pandas as pd
-from mytypes import DataKeys as dk, IssueLevel, IssueType, Purpose #, ValidationIssue
+from assessment_episode_matcher.mytypes import DataKeys as dk, IssueLevel, IssueType, Purpose #, ValidationIssue
 # from utils.environment import MyEnvironmentConfig, ConfigKeys
-import utils.df_ops_base as utdf
-from utils import base as utbase
-import matching.date_checks as dtchk
-from matching import increasing_slack as mis
+import assessment_episode_matcher.utils.df_ops_base as utdf
+from assessment_episode_matcher.utils import base as utbase
+import assessment_episode_matcher.matching.date_checks as dtchk
+from assessment_episode_matcher.matching import increasing_slack as mis
 
 
 def get_data_for_matching(ep_imptr, asmt_imptr, eps_st, eps_end

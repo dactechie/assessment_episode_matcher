@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 # from pathlib import Path
 import pandas as pd
-from azutil.az_blob_query import AzureBlobQuery
+from assessment_episode_matcher.azutil.az_blob_query import AzureBlobQuery
 
 class DataExporter(ABC):
 

@@ -3,7 +3,7 @@ from typing import Any
 from io import BytesIO, StringIO
 import pandas as pd
 from azure.storage.blob import BlobServiceClient #, BlobClient, ContainerClient
-from utils.environment import ConfigKeys, ConfigManager
+from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManager
 # import mylogging
 
 # logging = mylogging.get('azure.storage')

@@ -1,7 +1,7 @@
 # from utils.environment import MyEnvironmentConfig
 # from azure.data.tables import  TableEntity
 # from azure.data.tables import  EntityProperty
-from .az_tables_query import SampleTablesQuery
+from assessment_episode_matcher.azutil.az_tables_query import SampleTablesQuery
 # import mylogger
 # logger = mylogger.get(__name__)
 # from data_config import survey_datacols

@@ -1,10 +1,10 @@
 import logging
 import pandas as pd
 import numpy as np
-from mytypes import DataKeys as dk, \
+from assessment_episode_matcher.mytypes import DataKeys as dk, \
   IssueType, ValidationError, ValidationIssue, ValidationWarning,\
        ValidationMaskIssueTuple
-import utils.df_ops_base as ut
+import assessment_episode_matcher.utils.df_ops_base as ut
 
 
 def date_boundary_validators(limit_days:int) -> list[ValidationMaskIssueTuple]:

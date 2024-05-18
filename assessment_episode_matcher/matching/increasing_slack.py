@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
-from mytypes import DataKeys as dk
-from utils.df_ops_base import get_dupes_by_key, has_data
+from assessment_episode_matcher.mytypes import DataKeys as dk
+from assessment_episode_matcher.utils.df_ops_base import get_dupes_by_key, has_data
 
 def get_mask_datefit(row, slack_days=7):
     # Create a Timedelta for slack days
