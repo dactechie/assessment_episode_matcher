@@ -1,3 +1,4 @@
+from pathlib import Path
 import logging
 import pandas as pd
 from assessment_episode_matcher.configs import episodes as EpCfg
@@ -5,10 +6,13 @@ from assessment_episode_matcher.data_config import EstablishmentID_Program
 from assessment_episode_matcher.utils.dtypes import blank_to_today_str, convert_to_datetime
 from assessment_episode_matcher.utils.df_ops_base import has_data
 from assessment_episode_matcher.utils import io
+from assessment_episode_matcher.setup.bootstrap import Bootstrap
+
 # from utils.io import read_parquet, write_parquet
 
 def prepare(ep_df1:pd.DataFrame, start_date:str, end_date:str) -> pd.DataFrame:
-  processed_folder = 'data/processed/'
+  processed_folder = Bootstrap.processed_dir
+
   ep_df = ep_df1[EpCfg.columns_of_interest].copy()
   ep_df['Program'] = ep_df['ESTABLISHMENT IDENTIFIER'].map(EstablishmentID_Program)
   
@@ -22,24 +26,33 @@ def prepare(ep_df1:pd.DataFrame, start_date:str, end_date:str) -> pd.DataFrame:
   ep_df.rename(columns=EpCfg.rename_columns
             , inplace=True)
   
-  io.write_parquet(ep_df, f"{processed_folder}/MDS_{start_date}-{end_date}_AllPrograms.parquet")
+  file_path =  processed_folder.joinpath(f"MDS_{start_date}-{end_date}_AllPrograms.parquet")
+  
+  io.write_parquet(ep_df, file_path)
   return ep_df
 
 
-def import_data(eps_st:str, eps_end:str) -> pd.DataFrame:
-  
-  processed_folder = 'data/processed/'
-  source_folder = 'data/in/'
-  fname_eps =  f'MDS_{eps_st}-{eps_end}_AllPrograms' #NSW_
+def import_data(eps_st:str, eps_end:str, prefix:str, suffix:str) -> pd.DataFrame:
+  """
+    Load processed episodes dataframe from disk
+    If not available, load raw, process and save, and then return processed_df
+    prefix: MDS
+    suffix: AllPrograms
+  """  
+  processed_folder = Bootstrap.processed_dir
+  source_folder =  Bootstrap.in_dir
+  fname_eps =  f'{prefix}_{eps_st}-{eps_end}_{suffix}' #NSW_
   # fname_eps =  f'{source_folder}{filename}' #NSW_MDS_1jan2020-31dec2023.csv'#TEST_NSWMDS.csv'
-
-  processed_df = io.read_parquet(f"{processed_folder}{fname_eps}.parquet")
+  
+  processed_df = io.read_parquet(processed_folder.joinpath(f"{fname_eps}.parquet"))
   if not(isinstance(processed_df, type(None)) or processed_df.empty):
     logging.debug("found & returning pre-processed parquet file.")
     return processed_df
   
-  raw_df = io.read_csv_to_df( f"{source_folder}{fname_eps}.csv", dtype=str)
+  
+  raw_df = io.read_csv_to_df(source_folder.joinpath(f"{fname_eps}.csv"), dtype=str)
   if not has_data(raw_df):
+    logging.info("No Raw episode Data. Returning empty.")
     return raw_df
   
   raw_df.dropna(subset=['START DATE'], inplace=True)

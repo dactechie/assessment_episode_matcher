@@ -1,4 +1,4 @@
-from enum import Enum, StrEnum, auto
+from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Optional #, KW_ONLY
 from collections import namedtuple
@@ -21,7 +21,7 @@ class ResultType(Enum):
   NOT_OK = auto()
 
 
-class DataKeys(StrEnum):
+class DataKeys(Enum):
   client_id =  'SLK'
   episode_id = 'PMSEpisodeID'
   per_client_asmt_id = 'RowKey'
@@ -30,7 +30,7 @@ class DataKeys(StrEnum):
   episode_start_date = 'CommencementDate'
   episode_end_date = 'EndDate'
 
-class DatasetType(StrEnum):
+class DatasetType(Enum):
     ASSESSMENT = 'assessment'
     EPISODE = 'episode'
 

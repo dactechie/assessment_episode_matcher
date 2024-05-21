@@ -139,8 +139,7 @@ def transform_multiple(df1: pd.DataFrame, fields: list[str], transformer_fn) -> 
     # "None of [Index(['Past4WkBeenArrested', 'Past4WkHaveYouViolenceAbusive'], dtype='object')] are in the [columns]"
     fields_indf = [f for f in fields if f in df.columns]
     if not fields_indf:
-        logging.info(f"transform_multiple: fields {
-                     fields} not in df columns {df.columns}")
+        logging.info(f"transform_multiple: fields {fields} not in df columns {df.columns}")
         return df
     # if len(fields_indf) !=  len(df.columns):
     #   fields_noindf = [f for f in fields if f not in df.columns]

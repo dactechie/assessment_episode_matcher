@@ -2,7 +2,9 @@
 from datetime import date
 # from pathlib import Path
 import pandas as pd
-from assessment_episode_matcher.utils.environment import ConfigManager, ConfigKeys
+from assessment_episode_matcher import project_directory
+from assessment_episode_matcher.setup.bootstrap import Bootstrap
+from assessment_episode_matcher.utils.environment import ConfigKeys
 from assessment_episode_matcher.matching import main as match_helper
 from assessment_episode_matcher.matching.errors import process_errors_warnings
 
@@ -61,7 +63,7 @@ def exclude_mismatched_dupe_assessments(slkprog_datematched:pd.DataFrame
     slk_datematched_v2 = utdf.filter_out_common(slk_datematched, slkprog_datematched, key='Ep_AsDate')
     
     # good_df2_v2 =  good_df2[~good_df2.Ep_AsDate.isin(good_df.Ep_AsDate)]
-    print("fix_incorrect_program: moving rows from slk_datematched becauase they exist in slkprog_datematched: \n"
+    print("fix_incorrect_program: moving rows from slk_datematched becauase they exist in slkprog_datematched: \n" \
           , slk_datematched[~slk_datematched.Ep_AsDate.isin(slk_datematched_v2.Ep_AsDate)])
     slk_datematched_v2 = utdf.drop_fields(slk_datematched_v2, ['Ep_AsDate'])
 
@@ -150,19 +152,21 @@ def match_and_get_issues(e_df, a_df, inperiod_atomslk_notin_ep, inperiod_epslk_n
 def main2():
     # TODO:
     # envinronemnt setup : Config setup, Expected Directories create, logging setup
-
-    ConfigManager.setup('dev')
-    cfg = ConfigManager().config
+    bstrap = Bootstrap.setup(project_directory, env="dev")
+    
+    cfg, logger = bstrap.config, bstrap.logger
+    # ConfigManager.setup('dev')
+    # cfg = ConfigManager().config
     slack_for_matching = int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK, 7))
     refresh_assessments = False #cfg.get( ConfigKeys.REFRESH_ATOM_DATA, True )
     reporting_start = date(2024, 1, 1)
     reporting_end = date(2024, 3, 31)
-    # source_folder = 'data/in/'
+
     eps_st, eps_end = '20220101', '20240331'    
     asmt_st, asmt_end = "20160701",  "20240508"
 
     a_df, e_df, inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom = \
-        match_helper.get_data_for_matching( imptr_episodes \
+        match_helper.get_data_for_matching(imptr_episodes \
                                        , imptr_atoms \
                                        , eps_st, eps_end \
                                        , reporting_start, reporting_end \
@@ -179,8 +183,9 @@ def main2():
                                           , inperiod_epslk_notin_atom, slack_for_matching)
 
     warning_asmt_ids  = final_good.SLK_RowKey.unique()
+    
 
-    ae = AuditExporter(config={'location' : 'data/out/errors_warnings/'})
+    ae = AuditExporter(config={'location' : f'{bstrap.ew_dir}'})
     process_errors_warnings(ew, warning_asmt_ids, dk.client_id.value
                             , period_start=reporting_start
                             , period_end=reporting_end
@@ -188,7 +193,7 @@ def main2():
   
 
     df_reindexed = final_good.reset_index(drop=True)
-    df_reindexed.to_csv('data/out/reindexed.csv', index_label="index")
+    df_reindexed.to_csv(f'{bstrap.out_dir}/reindexed.csv', index_label="index")
     return df_reindexed
     # nada_importfile:Path = Path("data/out") / \
     #                        f"{reporting_start}_{reporting_end}_surveytxt.csv"

@@ -1,11 +1,11 @@
 import os
-from enum import StrEnum
+from enum import Enum
 # from typing import Protocol
 # from typing import TypedDict
 from dotenv import load_dotenv
 
 
-class ConfigKeys(StrEnum):
+class ConfigKeys(Enum):
   REFRESH_ATOM_DATA = 'REFRESH_ATOM_DATA'
   TABLES_STORAGE_ENDPOINT_SUFFIX = 'TABLES_STORAGE_ENDPOINT_SUFFIX'
   TABLES_STORAGE_ACCOUNT_NAME = 'TABLES_STORAGE_ACCOUNT_NAME'

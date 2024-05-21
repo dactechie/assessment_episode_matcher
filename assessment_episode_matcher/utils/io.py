@@ -2,6 +2,7 @@
 import os
 from datetime import datetime
 import logging
+from pathlib import Path
 import pandas as pd
 from assessment_episode_matcher.utils.dtypes import convert_float_to_datetime
 import assessment_episode_matcher.utils.df_ops_base as utdf
@@ -61,16 +62,16 @@ def add_filter_columns(df1, filters:dict):
   return df
     
 
-def read_parquet(file_path:str) -> pd.DataFrame:
+def read_parquet(file_path:Path) -> pd.DataFrame:
   if os.path.exists(file_path):
     df = pd.read_parquet(file_path)
     return df
   return pd.DataFrame()
 
-def write_parquet(df:pd.DataFrame, file_path:str, force=False) -> int:
-  pathdirs_without_fname = file_path.split("/")[:-1]
-  parent_dir = "/".join(pathdirs_without_fname)
-  if force or os.path.exists(parent_dir):
+def write_parquet(df:pd.DataFrame, file_path:Path, force=False) -> int:
+  pathdirs_without_fname = file_path.parent # file_path.split("/")[:-1]
+  # parent_dir = "/".join(pathdirs_without_fname)
+  if force or os.path.exists(pathdirs_without_fname):
     df.to_parquet(f"{file_path}")
     logging.info(f"Wrote to parquet file {file_path}")
     return 0
@@ -171,7 +172,7 @@ def handle_refresh(df1:pd.DataFrame
 #TODO : store /load parquet file from file/blob storage
 def get_data(table:str, start_date:int, end_date:int
              , cache_data:pd.DataFrame
-             , download_filepath:str = ""
+             , download_filepath:Path #= ""
              , filters:dict|None={}
              , refresh:bool=True) -> tuple[pd.DataFrame, bool]:
   #
@@ -211,7 +212,7 @@ def get_data(table:str, start_date:int, end_date:int
 # TODO sort by the period: end_date  part ofthe file which would be the latest refreshed date
 # we want the most recent to be on top so when it matches against the func params, 
 # we get the cache file with the latest data
-def load_for_period(path: str, st_yyyymmdd: str
+def load_for_period(path: Path, st_yyyymmdd: str
                     , ed_yyyymmdd: str, prefix: str, suffix:str="") \
                       -> tuple[pd.DataFrame, datetime|None, datetime|None]:
     """

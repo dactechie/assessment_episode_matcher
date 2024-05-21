@@ -7,6 +7,7 @@ import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.utils import base as utbase
 import assessment_episode_matcher.matching.date_checks as dtchk
 from assessment_episode_matcher.matching import increasing_slack as mis
+from assessment_episode_matcher.setup.bootstrap import Bootstrap
 
 
 def get_data_for_matching(ep_imptr, asmt_imptr, eps_st, eps_end
@@ -22,7 +23,7 @@ def get_data_for_matching(ep_imptr, asmt_imptr, eps_st, eps_end
         - a. Clients Assessments for clients who are NOT in the final Episode list.
         - b. Client Episodes for clients who are NOT in the final Assessment list.
   """
-
+  # Bootstrap.config
   episode_df = ep_imptr.import_data(eps_st, eps_end)
   if not utdf.has_data(episode_df):
       logging.error("No episodes")

@@ -5,6 +5,8 @@ from assessment_episode_matcher.utils import io
 from assessment_episode_matcher.mytypes import Purpose
 from assessment_episode_matcher import data_config
 from assessment_episode_matcher.utils.df_ops_base import has_data
+from assessment_episode_matcher.setup.bootstrap import Bootstrap
+
 
 
 def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
@@ -41,15 +43,15 @@ def import_data(asmt_st:str, asmt_end:str
     3. Raw Does NOT exist:
 
   """
-  processed_folder = 'data/processed'
-  preprocessed_folder = 'data/in'
+  processed_folder =  Bootstrap.processed_dir
+  preprocessed_folder = Bootstrap.in_dir
   filters = data_config.ATOM_DB_filters[purpose]
   
   # period_range = f"{asmt_st}-{asmt_end}"
   fname = get_filename("ATOM", asmt_st
                        , asmt_end, "AllPrograms")
                        
-  processed_filepath = f"{processed_folder}/{fname}"
+  processed_filepath = processed_folder.joinpath(f"{fname}.parquet") # f"{processed_folder}/{fname}"
   
   logging.info(f"Attempting to load processed data from {processed_filepath}")
 
@@ -85,8 +87,8 @@ def import_data(asmt_st:str, asmt_end:str
         fname = get_filename("ATOM", best_start_date.strftime("%Y%m%d")
                         , best_end_date.strftime("%Y%m%d"), "AllPrograms")
 
-      processed_filepath = f"{processed_folder}/{fname}"
-      io.write_parquet(processed_df,f"{processed_filepath}.parquet")
+      processed_file = processed_folder.joinpath(f"{fname}.parquet")#  f"{processed_folder}/{fname}"
+      io.write_parquet(processed_df,processed_file)
     else:
         logging.info("Raw file doesn't exist either. load from DB. " \
                + "\n Hardcoding 20160701 as start date and today as end date.")
@@ -97,8 +99,9 @@ def import_data(asmt_st:str, asmt_end:str
         raw_df = io.get_from_source("ATOM", 20160701
                                     , today_int, filters=filters)     
         fname =   get_filename("ATOM", asmt_st
-                       , today_str, "AllPrograms")        
-        io.write_parquet(raw_df,f"{preprocessed_folder}/{fname}.parquet")
+                       , today_str, "AllPrograms")
+        preprocessed_file = preprocessed_folder.joinpath(f"{fname}.parquet")
+        io.write_parquet(raw_df, preprocessed_file)
         processed_df = io.process_assment(raw_df)
         # no need to refresh
         return processed_df
@@ -115,11 +118,11 @@ def import_data(asmt_st:str, asmt_end:str
     return processed_df
   # Data has been loaded in processed_df, but needs refresh. 
   # refresh only processed file?
-  processed_filepath = f"{processed_folder}/{fname}" 
+  processed_file = processed_folder.joinpath(f"{fname}.parquet")# f"{processed_folder}/{fname}" 
   fetched_df, was_refreshed = io.get_data('ATOM'
                     ,int(asmt_st), int(asmt_end)
                     , processed_df
-                    , f"{processed_filepath}.parquet"
+                    , processed_file
                     , filters=filters                
                     , refresh=refresh)
   
@@ -132,8 +135,8 @@ def import_data(asmt_st:str, asmt_end:str
     today_str = today.strftime("%Y%m%d")
     fname = get_filename("ATOM", asmt_st
                        , today_str, "AllPrograms")
-    
-    io.write_parquet(fetched_df, f"{processed_folder}/{fname}.parquet")
+    processed_file = processed_folder.joinpath(f"{fname}.parquet")
+    io.write_parquet(fetched_df, processed_file)
     processed_df = fetched_df
     logging.info("Caching and returning refreshed assessment data.")
 
@@ -145,7 +148,7 @@ if __name__ == '__main__':
   ConfigManager.setup('dev')
   cfg = ConfigManager().config
   asmt_st, asmt_end = "20220101", "20240411"
-  preprocessed_folder = 'data/in'
+  preprocessed_folder =  Bootstrap.in_dir
    
   
   period_range = f"{asmt_st}-{asmt_end}"
