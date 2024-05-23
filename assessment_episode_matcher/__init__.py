@@ -1,3 +1,4 @@
+from .version import __version__
 from pathlib import Path
 
 # Get the path of the current file (module.py)
