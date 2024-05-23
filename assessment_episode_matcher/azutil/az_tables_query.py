@@ -24,7 +24,7 @@ class SampleTablesQuery(object):
     def __init__(self, table_name:str):
       config = ConfigManager().config
     
-      self.connection_string = str(config.get(ConfigKeys.AZURE_STORAGE_CONNECTION_STRING,""))
+      self.connection_string = str(config.get(ConfigKeys.AZURE_STORAGE_CONNECTION_STRING.value,""))
 
       self.table_name = table_name
       logging.info(f"SampleTablesQuery initialised with connection_string: {self.connection_string}")

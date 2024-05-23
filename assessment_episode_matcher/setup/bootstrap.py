@@ -1,10 +1,8 @@
 from logging import Logger
 import os
 # import sys
-from typing import Optional
+# from typing import Optional
 from pathlib import Path
-# import keyring
-# import getpass
 # from tcli.utils.common.config import ConfigLoader
 from assessment_episode_matcher.utils.environment import ConfigManager #, ConfigKeys
 from assessment_episode_matcher.setup.log_management import setup_logdir_by_currentdate, configure_logging
@@ -13,8 +11,8 @@ from assessment_episode_matcher.setup.log_management import setup_logdir_by_curr
 # logger = None
 
 
-def setup_config(config_file) -> dict :
-    ConfigManager.setup('dev')
+def setup_config(root, env) -> dict :
+    ConfigManager.setup(root, env)
     cfg = ConfigManager().config
     return cfg
     # config_loader = ConfigLoader(config_file=config_file)
@@ -61,7 +59,7 @@ class Bootstrap:
   
   @classmethod
   def setup(cls, root: Path, env:str=""):
-      cls.config = setup_config(env)
+      cls.config = setup_config(root, env)
       cls.data_dir, cls.in_dir, cls.out_dir, \
         cls.ew_dir, cls.processed_dir = setup_directories(root, env)
       cls.logger, cls.today_log_dir = setup_logging(env)

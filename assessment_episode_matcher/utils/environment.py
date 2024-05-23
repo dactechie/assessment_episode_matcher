@@ -26,9 +26,9 @@ class ConfigManager:
         return cls._instance
   
     @classmethod
-    def setup(cls, env:str):
+    def setup(cls, root, env:str):
         cls.env = env
-        env_file = f'.env.{cls.env}'
+        env_file = f'{root}/.env.{cls.env}'
         if not os.path.isfile(env_file):
             raise FileNotFoundError(f"Environment file {env_file} not found.")
             

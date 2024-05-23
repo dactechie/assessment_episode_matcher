@@ -1,12 +1,13 @@
 import logging
 from datetime import datetime
+from pathlib import Path
 import pandas as pd
+from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils import io
 from assessment_episode_matcher.mytypes import Purpose
 from assessment_episode_matcher import data_config
 from assessment_episode_matcher.utils.df_ops_base import has_data
 from assessment_episode_matcher.setup.bootstrap import Bootstrap
-
 
 
 def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
@@ -16,18 +17,14 @@ def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
 
 
 
-def get_filename(prefix:str ,start:str, end:str, suffix:str="", sep:str ="_"):
-  
-  period_range = f"{start}-{end}"
-  fname =  f"{prefix}{sep}{period_range}{sep}{suffix}"
-  return fname
-
-
 def import_data(asmt_st:str, asmt_end:str
+                , file_source:FileSource
                 ,purpose:Purpose, refresh:bool=True
-                ) -> pd.DataFrame:
+                ) -> tuple [pd.DataFrame, str]:
   
   """
+    Returns 2 values - the 2nd is a path to the cached to
+
     1. If processed file for the period exists:
         if asking to be refreshed, go to #2
         else return file
@@ -42,69 +39,87 @@ def import_data(asmt_st:str, asmt_end:str
 
     3. Raw Does NOT exist:
 
+
+
   """
-  processed_folder =  Bootstrap.processed_dir
-  preprocessed_folder = Bootstrap.in_dir
+
+  processed_folder =  Bootstrap.processed_dir / "ATOM"
+  source_folder = Bootstrap.in_dir / "ATOM"
   filters = data_config.ATOM_DB_filters[purpose]
   
   # period_range = f"{asmt_st}-{asmt_end}"
-  fname = get_filename("ATOM", asmt_st
+  fname = io.get_filename("ATOM", asmt_st
                        , asmt_end, "AllPrograms")
                        
   processed_filepath = processed_folder.joinpath(f"{fname}.parquet") # f"{processed_folder}/{fname}"
   
   logging.info(f"Attempting to load processed data from {processed_filepath}")
 
-  processed_df, best_start_date, best_end_date = \
+  file_path, best_start_date, best_end_date = \
     io.load_for_period(processed_folder
+                        , file_source
                           , asmt_st
                           , asmt_end
                           ,prefix="ATOM_"
+                          , suffix="AllPrograms.parquet"
                           )
-  if best_start_date and best_end_date:
-    fname = get_filename("ATOM", best_start_date.strftime("%Y%m%d")
-                        , best_end_date.strftime("%Y%m%d"), "AllPrograms")
+  # if best_start_date and best_end_date:
+  #   fname = io.get_filename("ATOM", best_start_date.strftime("%Y%m%d")
+  #                       , best_end_date.strftime("%Y%m%d"), "AllPrograms")
     
   # TO DO check if recent or needs to be refreshed
-
-  if isinstance(processed_df, type(None)) or processed_df.empty:
-    # logging.debug("found & returning processed parquet file.")  
-    print ("Loading from Raw.parquet")
+  if file_path:
+    processed_df = file_source.load_parquet_file_to_df(file_path)
+    if has_data(processed_df):
+      logging.debug("found & returning processed parquet file.")
+      return processed_df, ""
     
-    raw_df, best_start_date, best_end_date = \
-      io.load_for_period(preprocessed_folder
-                          , asmt_st
-                          , asmt_end
-                          ,prefix="ATOM_"
-                          )
-    # io.read_parquet(f"{preprocessed_folder}/{fname}.parquet")
-    # TO DO check if recent or needs to be refreshed
-    if not(isinstance(raw_df, type(None)) or raw_df.empty):
-      processed_df = io.process_assment(raw_df)
-      # use the same start and end date as the raw filename
-      if best_start_date and best_end_date:
-        # period_range = f"{best_start_date.strftime("%Y%m%d")}-{best_end_date.strftime("%Y%m%d")}"
-        fname = get_filename("ATOM", best_start_date.strftime("%Y%m%d")
-                        , best_end_date.strftime("%Y%m%d"), "AllPrograms")
+  logging.info ("Loading from Raw.parquet")
+  
+  file_path, best_start_date, best_end_date = \
+    io.load_for_period(source_folder
+                      , file_source
+                        , asmt_st
+                        , asmt_end
+                        , prefix="ATOM_"
+                        , suffix="AllPrograms.csv"
+                        )
+  
+  raw_df = file_source.load_csv_file_to_df(file_path, dtype=str)
+  # TO DO check if recent or needs to be refreshed
+  if not(isinstance(raw_df, type(None)) or raw_df.empty):
+    processed_df = io.process_assment(raw_df)
+    # use the same start and end date as the raw filename
+    if best_start_date and best_end_date:
+      # period_range = f"{best_start_date.strftime("%Y%m%d")}-{best_end_date.strftime("%Y%m%d")}"
+      fname = io.get_filename("ATOM", best_start_date.strftime("%Y%m%d")
+                      , best_end_date.strftime("%Y%m%d"), "AllPrograms")
 
-      processed_file = processed_folder.joinpath(f"{fname}.parquet")#  f"{processed_folder}/{fname}"
-      io.write_parquet(processed_df,processed_file)
-    else:
-        logging.info("Raw file doesn't exist either. load from DB. " \
-               + "\n Hardcoding 20160701 as start date and today as end date.")
-        today = datetime.now()
-        today_str = today.strftime('%Y%m%d')
-        today_int = int(today_str)
-        
-        raw_df = io.get_from_source("ATOM", 20160701
-                                    , today_int, filters=filters)     
-        fname =   get_filename("ATOM", asmt_st
-                       , today_str, "AllPrograms")
-        preprocessed_file = preprocessed_folder.joinpath(f"{fname}.parquet")
-        io.write_parquet(raw_df, preprocessed_file)
-        processed_df = io.process_assment(raw_df)
-        # no need to refresh
-        return processed_df
+    processed_file = processed_folder.joinpath(f"{fname}.parquet")#  f"{processed_folder}/{fname}"
+    logging.warn("writing processed only to the local folder. ")
+    #TODO : this only writes to the local one.. need to write to blob
+  
+    io.write_parquet(processed_df,processed_file)
+
+  else:
+      logging.info("Raw file doesn't exist either. load from DB. " \
+              + "\n Hardcoding 20160701 as start date and today as end date.")
+      today = datetime.now()
+      today_str = today.strftime('%Y%m%d')
+      today_int = int(today_str)
+      
+      raw_df = io.get_from_source("ATOM", 20160701
+                                  , today_int, filters=filters)     
+      fname =   io.get_filename("ATOM", asmt_st
+                      , today_str, "AllPrograms")
+      preprocessed_file = source_folder.joinpath(f"{fname}.parquet")
+      io.write_parquet(raw_df, preprocessed_file)
+      logging.warn("wrote pre-processed only to the local folder. ")
+      processed_df = io.process_assment(raw_df)
+      return processed_df, str(processed_folder.joinpath(f"{fname}.parquet"))
+      
+  
+  
       
   #   # get the last modified date of the file
   #   # get the last modified date of ATOMs in the period of interest (assessmentDate)
@@ -115,7 +130,7 @@ def import_data(asmt_st:str, asmt_end:str
 
   if not refresh:
     logging.info("Returning cached (processed) assessment data.")
-    return processed_df
+    return processed_df, ""
   # Data has been loaded in processed_df, but needs refresh. 
   # refresh only processed file?
   processed_file = processed_folder.joinpath(f"{fname}.parquet")# f"{processed_folder}/{fname}" 
@@ -133,36 +148,36 @@ def import_data(asmt_st:str, asmt_end:str
   if was_refreshed:
     today = datetime.today()
     today_str = today.strftime("%Y%m%d")
-    fname = get_filename("ATOM", asmt_st
+    fname = io.get_filename("ATOM", asmt_st
                        , today_str, "AllPrograms")
     processed_file = processed_folder.joinpath(f"{fname}.parquet")
     io.write_parquet(fetched_df, processed_file)
     processed_df = fetched_df
     logging.info("Caching and returning refreshed assessment data.")
 
-  return processed_df
+  return processed_df, str(processed_file)
 
   
-if __name__ == '__main__':
-  from assessment_episode_matcher.utils.environment import ConfigManager
-  ConfigManager.setup('dev')
-  cfg = ConfigManager().config
-  asmt_st, asmt_end = "20220101", "20240411"
-  preprocessed_folder =  Bootstrap.in_dir
+# if __name__ == '__main__':
+#   from assessment_episode_matcher.utils.environment import ConfigManager
+#   ConfigManager.setup('dev')
+#   cfg = ConfigManager().config
+#   asmt_st, asmt_end = "20220101", "20240411"
+#   preprocessed_folder =  Bootstrap.in_dir
    
   
-  period_range = f"{asmt_st}-{asmt_end}"
-  fname =  f'ATOM_{period_range}_AllPrograms'
-  # processed_filepath = f"{processed_folder}/{fname}"
+#   period_range = f"{asmt_st}-{asmt_end}"
+#   fname =  f'ATOM_{period_range}_AllPrograms'
+#   # processed_filepath = f"{processed_folder}/{fname}"
   
-  df = import_data(asmt_st, asmt_end, Purpose.NADA )
-  # df = io.load_for_period(preprocessed_folder
-  #                         , asmt_st
-  #                         , asmt_end
-  #                         ,prefix="ATOM_"
-  #                         )
+#   df = import_data(asmt_st, asmt_end, Purpose.NADA )
+#   # df = io.load_for_period(preprocessed_folder
+#   #                         , asmt_st
+#   #                         , asmt_end
+#   #                         ,prefix="ATOM_"
+#   #                         )
   
-  print(df)
+#   print(df)
 
 # def get_filename(data_type:DataType, purpose:Optional[Purpose]) -> str:
 #   if data_type == DataType.ATOM:

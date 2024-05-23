@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import pandas as pd
+from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils.dtypes import convert_float_to_datetime
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.azutil.helper import get_results
@@ -12,8 +13,18 @@ from assessment_episode_matcher.azutil.helper import get_results
 
 # logging = mylogging.get(__name__)
 
+
+
+def get_filename(prefix:str ,start:str, end:str, suffix:str="", sep:str ="_"):
+  
+  period_range = f"{start}-{end}"
+  fname =  f"{prefix}{sep}{period_range}{sep}{suffix}"
+  return fname
+
+
 def read_csv_to_df(csv_file_path, dtype) -> pd.DataFrame:
     if not os.path.exists(csv_file_path):
+      logging.info("Path does not exist. Returning empty dataframe", csv_file_path )
       return pd.DataFrame()
     if not dtype:
       df = pd.read_csv(csv_file_path, encoding='utf-8-sig')
@@ -62,7 +73,7 @@ def add_filter_columns(df1, filters:dict):
   return df
     
 
-def read_parquet(file_path:Path) -> pd.DataFrame:
+def read_parquet_to_df(file_path:Path) -> pd.DataFrame:
   if os.path.exists(file_path):
     df = pd.read_parquet(file_path)
     return df
@@ -212,9 +223,9 @@ def get_data(table:str, start_date:int, end_date:int
 # TODO sort by the period: end_date  part ofthe file which would be the latest refreshed date
 # we want the most recent to be on top so when it matches against the func params, 
 # we get the cache file with the latest data
-def load_for_period(path: Path, st_yyyymmdd: str
+def load_for_period(path: Path, file_source:FileSource, st_yyyymmdd: str
                     , ed_yyyymmdd: str, prefix: str, suffix:str="") \
-                      -> tuple[pd.DataFrame, datetime|None, datetime|None]:
+                      -> tuple[str, datetime|None, datetime|None]:
     """
     Load the file with the filename pattern if there are multiple limit matches to the one that is the best fit for the date range.
     
@@ -229,16 +240,17 @@ def load_for_period(path: Path, st_yyyymmdd: str
     end_date = datetime.strptime(ed_yyyymmdd, "%Y%m%d")
 
     # Get a list of all files in the directory
-    files = os.listdir(path)
+    matching_files = file_source.list_files(prefix, suffix)
+    # matching_files = [f for f, p in matching_files_and_paths]
 
     # Filter files based on the filename pattern
-    matching_files = [file for file in files if file.startswith(prefix) and file.endswith(suffix)]
+    # matching_files = [file for file in files if file.startswith(prefix) and file.endswith(suffix)]
     #TODO sort these files 
 
     # Initialize variables to store the best matching file and its date range
     best_match = None
     best_start_date = datetime(2016,7,1)
-    best_end_date = datetime(2024,4,11)
+    best_end_date = datetime.today()
 
     # Iterate over the matching files
     for file in matching_files:
@@ -255,13 +267,14 @@ def load_for_period(path: Path, st_yyyymmdd: str
                 best_start_date = file_start_date
                 best_end_date = file_end_date
 
+    # file_path = ""
     # If a matching file is found, load it using pandas
     if best_match:
-        file_path = os.path.join(path, best_match)
-        df = pd.read_parquet(file_path)
-        return df, best_start_date, best_end_date
+        # file_path = os.path.join(path, path)
+        # df = pd.read_parquet(file_path)
+        return best_match, best_start_date, best_end_date
     else:
-        return pd.DataFrame(), None, None
+        return "", None, None
 
 
 # if __name__ == '__main__':

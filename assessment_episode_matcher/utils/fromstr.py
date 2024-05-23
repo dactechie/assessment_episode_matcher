@@ -1,11 +1,17 @@
 import logging
 import json
-from datetime import datetime
-import numpy as np
+from datetime import datetime, date
+# import numpy as np
 
-def convert_format_datestr(date_string:str, from_format:str, to_format:str):
-  date1 = datetime.strptime(date_string, from_format).strftime(to_format)
-  return date1
+# def convert_format_datestr(date_string:str, from_format:str, to_format:str) -> tuple[str, date]:
+#   date_dt = datetime.strptime(date_string, from_format)
+#   date1 = date_dt.strftime(to_format)
+#   return date1, date_dt.date()
+
+
+def get_date_from_str(date_string:str, from_format:str) -> date:
+  date_dt = datetime.strptime(date_string, from_format)
+  return  date_dt.date()
 
 def is_numeric(value):
     try:
