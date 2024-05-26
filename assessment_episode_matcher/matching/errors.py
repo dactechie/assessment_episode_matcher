@@ -95,7 +95,7 @@ def write_validation_results(errors_warnings:dict[str, pd.DataFrame]
     
     for ew_type_name, errs_warns in errors_warnings.items():
       if utdf.has_data(errs_warns):
-        audit_exporter.export_data(ew_type_name, errs_warns)       
+        audit_exporter.export_data(f"{ew_type_name}.csv", errs_warns)       
        
     
 

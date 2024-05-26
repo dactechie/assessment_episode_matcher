@@ -3,6 +3,7 @@ import os
 # import sys
 # from typing import Optional
 from pathlib import Path
+from typing import Any
 # from tcli.utils.common.config import ConfigLoader
 from assessment_episode_matcher.utils.environment import ConfigManager #, ConfigKeys
 from assessment_episode_matcher.setup.log_management import setup_logdir_by_currentdate, configure_logging
@@ -19,27 +20,54 @@ def setup_config(root, env) -> dict :
     # config_loader.load_config()
     # return config_loader
 
+# def setup_directories(root: Path, env:str=""):
+#     # suffix = config.get("env_suffix")
+#     if env == 'dev' or env == 'test':
+#         suffix = f"{os.sep}{env}"
+
+#     data_dir = Path(f'{root}{os.sep}data{suffix}')
+#     data_dir.mkdir(exist_ok=True)
+#     in_dir = data_dir / 'in'
+#     in_dir.mkdir(exist_ok=True)
+#     out_dir = data_dir / 'out'
+#     out_dir.mkdir(exist_ok=True)
+#     ew_dir = out_dir / 'errors_warnings'
+#     ew_dir.mkdir(exist_ok=True)
+#     processed_dir = data_dir / 'processed'
+#     processed_dir.mkdir(exist_ok=True)
+
+#     return data_dir, in_dir, out_dir, ew_dir, processed_dir
+
 def setup_directories(root: Path, env:str=""):
     # suffix = config.get("env_suffix")
+    
     if env == 'dev' or env == 'test':
-        suffix = f"{os.sep}{env}"
-
-    data_dir = Path(f'{root}{os.sep}data{suffix}')
-    data_dir.mkdir(exist_ok=True)
+        data_dir =  root / "data" / "dev"
+    else:
+      data_dir =  root / "data"
+       
+    #Path(f'{root}{os.sep}data{suffix}')
+    # data_dir.mkdir(exist_ok=True)
     in_dir = data_dir / 'in'
-    in_dir.mkdir(exist_ok=True)
+    # in_dir.mkdir(exist_ok=True)
     out_dir = data_dir / 'out'
-    out_dir.mkdir(exist_ok=True)
+    # out_dir.mkdir(exist_ok=True)
     ew_dir = out_dir / 'errors_warnings'
-    ew_dir.mkdir(exist_ok=True)
+    # ew_dir.mkdir(exist_ok=True)
     processed_dir = data_dir / 'processed'
-    processed_dir.mkdir(exist_ok=True)
+    # processed_dir.mkdir(exist_ok=True)
 
-    return data_dir, in_dir, out_dir, ew_dir, processed_dir
+    return {
+        'data_dir': data_dir
+        ,'in_dir': in_dir
+         ,'out_dir':  out_dir
+         ,'ew_dir':  ew_dir
+         ,'processed_dir': processed_dir }
     
 
 def setup_logging(env:str=""):
-    today_log_dir = setup_logdir_by_currentdate(env)
+    # today_log_dir = setup_logdir_by_currentdate(env)
+    today_log_dir = Path("logs")
     logger = configure_logging(today_log_dir,__name__,"")
     return logger, today_log_dir
 
@@ -49,6 +77,7 @@ class Bootstrap:
   config: dict
   logger :Logger
   today_log_dir:str
+  data = {}
     
 
   def __new__(cls):
@@ -57,12 +86,48 @@ class Bootstrap:
         # cls._instance.env = 'local'
     return cls._instance
   
+  # @classmethod
+  # def __getattr__(cls, key) -> Any:
+  #     if key in cls.data:
+  #         return cls.data[key]
+  #     raise AttributeError(f"No attribute named '{key}' found")
+  
+  # @classmethod
+  # def __getitem__(cls, key: str) -> Any:
+  #     return cls.__getattr__(key)
+
+  @classmethod
+  def get(cls, key: str, default=None) -> Any:
+      return cls.data.get(key, default)
+
+  # @classmethod
+  # def get_path(cls, key: str, default=None) -> Path:
+  #     return Path(cls.data.get(key, default))
+  
+  @classmethod
+  def set(cls, key:str, value:str):
+      cls.data[key] = value
+  
+  @classmethod
+  def set_dirs(cls, dirs:dict):
+ 
+      for k, v in dirs.items():
+          cls.data[k] = v
+  
+  
   @classmethod
   def setup(cls, root: Path, env:str=""):
+      print("setting up config")
       cls.config = setup_config(root, env)
-      cls.data_dir, cls.in_dir, cls.out_dir, \
-        cls.ew_dir, cls.processed_dir = setup_directories(root, env)
-      cls.logger, cls.today_log_dir = setup_logging(env)
+      
+      print(".....Done setting up config")
+
+      # dirs =  setup_directories(root, env)
+      # cls.set_dirs(dirs)
+
+      print("GOING to set up logging")
+      # cls.logger, cls.today_log_dir = setup_logging(env)
+      print("Done setting up logging")
       return cls
 
       

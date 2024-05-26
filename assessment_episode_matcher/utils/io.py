@@ -45,17 +45,17 @@ def create_results_folder(results_folder:str):
   if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 
-def write_df_to_csv(df, file_path:str, filters:dict|None={}):
-  df['ResultsTimestamp'] = datetime.now().replace(microsecond=0)
-  # Check if file exists
-  if os.path.isfile(file_path):
-      # If the file exists, append without writing the header
-      df.to_csv(file_path, mode='a', index=False, header=False)
-  else:
-      # If the file does not exist, write the DataFrame to CSV with a header
-      df.to_csv(file_path, index=False, header=True)  
+# def write_df_to_csv(df, file_path:str, filters:dict|None={}):
+#   df['ResultsTimestamp'] = datetime.now().replace(microsecond=0)
+#   # Check if file exists
+#   if os.path.isfile(file_path):
+#       # If the file exists, append without writing the header
+#       df.to_csv(file_path, mode='a', index=False, header=False)
+#   else:
+#       # If the file does not exist, write the DataFrame to CSV with a header
+#       df.to_csv(file_path, index=False, header=True)  
 
-  # df.to_csv(file_path, index=False, mode='a')
+#   # df.to_csv(file_path, index=False, mode='a')
 
 
 def add_filter_columns(df1, filters:dict):
@@ -79,15 +79,15 @@ def read_parquet_to_df(file_path:Path) -> pd.DataFrame:
     return df
   return pd.DataFrame()
 
-def write_parquet(df:pd.DataFrame, file_path:Path, force=False) -> int:
-  pathdirs_without_fname = file_path.parent # file_path.split("/")[:-1]
-  # parent_dir = "/".join(pathdirs_without_fname)
-  if force or os.path.exists(pathdirs_without_fname):
-    df.to_parquet(f"{file_path}")
-    logging.info(f"Wrote to parquet file {file_path}")
-    return 0
-  logging.info(f"Did not write to  file {file_path}")
-  return -1
+# def write_parquet(df:pd.DataFrame, file_path:Path, force=False) -> int:
+#   pathdirs_without_fname = file_path.parent # file_path.split("/")[:-1]
+#   # parent_dir = "/".join(pathdirs_without_fname)
+#   if force or os.path.exists(pathdirs_without_fname):
+#     df.to_parquet(f"{file_path}")
+#     logging.info(f"Wrote to parquet file {file_path}")
+#     return 0
+#   logging.info(f"Did not write to  file {file_path}")
+#   return -1
  
 
 def get_from_source(table:str, start_date:int, end_date:int
@@ -183,7 +183,7 @@ def handle_refresh(df1:pd.DataFrame
 #TODO : store /load parquet file from file/blob storage
 def get_data(table:str, start_date:int, end_date:int
              , cache_data:pd.DataFrame
-             , download_filepath:Path #= ""
+            #  , download_filepath:Path #= ""
              , filters:dict|None={}
              , refresh:bool=True) -> tuple[pd.DataFrame, bool]:
   #
@@ -193,7 +193,7 @@ def get_data(table:str, start_date:int, end_date:int
   was_refreshed = False
   if utdf.has_data(cache_data):
       # if os.path.exists(f"{download_filepath}"):
-      logging.info(f"Using cached data from {download_filepath}")
+      logging.info(f"Using cached data ")
       # result_df = read_parquet(f"{cache_or_download_filepath}")
 
       if refresh:
@@ -215,7 +215,7 @@ def get_data(table:str, start_date:int, end_date:int
                       , end_date                      
                       , filters)
   processed_df = process_assment(result_df)
-  write_parquet(processed_df, download_filepath)
+  # write_parquet(processed_df, download_filepath)
 
   return processed_df, True
 
@@ -223,7 +223,7 @@ def get_data(table:str, start_date:int, end_date:int
 # TODO sort by the period: end_date  part ofthe file which would be the latest refreshed date
 # we want the most recent to be on top so when it matches against the func params, 
 # we get the cache file with the latest data
-def load_for_period(path: Path, file_source:FileSource, st_yyyymmdd: str
+def load_for_period(file_source:FileSource, st_yyyymmdd: str
                     , ed_yyyymmdd: str, prefix: str, suffix:str="") \
                       -> tuple[str, datetime|None, datetime|None]:
     """

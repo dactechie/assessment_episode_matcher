@@ -17,7 +17,7 @@ from assessment_episode_matcher.matching.errors import process_errors_warnings
 # from assessment_episode_matcher.importers import assessments as imptr_atoms
 from assessment_episode_matcher.importers import episodes as EpisodesImporter
 from assessment_episode_matcher.importers import assessments as ATOMsImporter
-from assessment_episode_matcher.exporters.main import AzureBlobExporter, CSVExporter as AuditExporter
+from assessment_episode_matcher.exporters.main import AzureBlobExporter #, CSVExporter as AuditExporter
 # from assessment_episode_matcher.exporters.main import AzureBlobExporter as AuditExporter
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
@@ -48,39 +48,47 @@ from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
 def main3():
     # TODO:
     # envinronemnt setup : Config setup, Expected Directories create, logging setup
-    bstrap = Bootstrap.setup(project_directory, env="dev")
+    bstrap = Bootstrap.setup(project_directory, env="prod")
     container = "atom-matching"
-    cfg, logger = bstrap.config, bstrap.logger
+    ep_folder, asmt_folder = "MDS", "ATOM"
+    
+    cfg = bstrap.config #, bstrap.logger
     # ConfigManager.setup('dev')
     # cfg = ConfigManager().config
     slack_for_matching = int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK.value, 7))
-    # refresh_assessments = False #cfg.get( ConfigKeys.REFRESH_ATOM_DATA, True )
-    # reporting_start = date(2024, 1, 1)
-    # reporting_end = date(2024, 3, 31)
-
+    
     reporting_start_str, reporting_end_str =  '20220101', '20240331'
+
     reporting_start, reporting_end = get_date_from_str (reporting_start_str,"%Y%m%d") \
                                       , get_date_from_str (reporting_end_str,"%Y%m%d")
 
     ep_file_source:FileSource = BlobFileSource(container_name=container
-                                            , folder_path="MDS")
+                                            , folder_path=ep_folder)
 
-    episode_df = EpisodesImporter.import_data(
+    episode_df, ep_cache_to_path = EpisodesImporter.import_data(
                             reporting_start_str, reporting_end_str
                             , ep_file_source
-                            , prefix="MDS", suffix="AllPrograms")
+                            , prefix=ep_folder, suffix="AllPrograms")
     if not utdf.has_data(episode_df):
       logging.error("No episodes")
       return json.dumps({"result":"no episode data"})
+    #TODO:
+    if ep_cache_to_path:
+      if ep_cache_to_path[-3:] =='csv':
+         ep_cache_to_path = f"{ep_cache_to_path[:-3]}parquet"
+         
+      exp = AzureBlobExporter(container_name=ep_file_source.container_name) #
+      exp.export_data(data_name=ep_cache_to_path, data=episode_df)   
                         # func.HttpResponse(body=json.dumps({"result":"no episode data"}),
                         #         mimetype="application/json", status_code=200)
 
     
     atom_file_source:FileSource = BlobFileSource(container_name=container
-                                            , folder_path="ATOM")
+                                            , folder_path=asmt_folder)
     atoms_df, atom_cache_to_path = ATOMsImporter.import_data(
                             reporting_start_str, reporting_end_str
                             , atom_file_source
+                            , prefix=asmt_folder, suffix="AllPrograms"
                             , purpose=Purpose.NADA, refresh=True)
     
     if atom_cache_to_path:
@@ -97,21 +105,15 @@ def main3():
     if not utdf.has_data(a_df) or not utdf.has_data(e_df):
         print("No data to match. Ending")
         return None    
-    # e_df.to_csv('data/out/active_episodes.csv')
+   
     final_good, ew = match_helper.match_and_get_issues(e_df, a_df
                                           , inperiod_atomslk_notin_ep
                                           , inperiod_epslk_notin_atom, slack_for_matching)
 
     warning_asmt_ids  = final_good.SLK_RowKey.unique()
-    
-
-    # ae = AuditExporter(config={'location' : f'{bstrap.ew_dir}'})
-
-    # FIXME : Incorrect location goes to C:/aftab.jal within the blob srtorage :
+   
     ae = AzureBlobExporter(container_name=atom_file_source.container_name
-                           ,config={'location' : f'{bstrap.ew_dir}'}) #
-    
-
+                           ,config={'location' : 'errors_warnings'})
 
     process_errors_warnings(ew, warning_asmt_ids, dk.client_id.value
                             , period_start=reporting_start
@@ -120,16 +122,10 @@ def main3():
   
 
     df_reindexed = final_good.reset_index(drop=True)
-    df_reindexed.to_csv(f'{bstrap.out_dir}/reindexed.csv', index_label="index")
 
     exp = AzureBlobExporter(container_name=atom_file_source.container_name) #
-    exp.export_data(data_name="NADA/reindexed.parquet", data=df_reindexed)      
-    # try:
-    #   #  atom_file_source:FileSource = BlobFileSource(container_name="atom-matching"
-    #   #                                       , folder_path="ATOM")
-      
-    #   exp = AzureBlobExporter(container_name=atom_file_source.container_name) #
-    #   exp.export_data(data_name=atom_cache_to_path, data=df_reindexed)
+    exp.export_data(data_name=f"NADA/{reporting_start_str}-{reporting_end_str}_reindexed.parquet", data=df_reindexed)      
+
     #   # logging.info("Result object", json.dumps(result))
        
     # finally:

@@ -1,15 +1,16 @@
-import os
+
 import logging
 from typing import Any
-from io import BytesIO, StringIO
-import tempfile
+from io import BytesIO
 import pandas as pd
 from azure.storage.blob import BlobServiceClient #, BlobClient, ContainerClient
-from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManager
 
+from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManager
+from assessment_episode_matcher.azutil.file_types import BlobCSVFilePrepper, BlobParquetFilePrepper
 # import mylogging
 
 # logging = mylogging.get('azure.storage')
+
 
 class AzureBlobQuery(object):
   def __init__(self):
@@ -55,42 +56,61 @@ class AzureBlobQuery(object):
         # You may want to display a user-friendly message in the Streamlit app
         # st.warning("An error occurred while loading the data. Please try again later.")
         return None       
-      
-  def _get_parquet(self, df:pd.DataFrame) -> bytes:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_file_path = os.path.join(temp_dir, "temp.parquet")
-        df.to_parquet(temp_file_path, engine="pyarrow")
-
-        # Read the Parquet file into memory
-        with open(temp_file_path, "rb") as file:
-            parquet_data = file.read()
-            return parquet_data
-
 
 
   def write_data(self, container_name:str, blob_url:str
                  , data:pd.DataFrame) -> dict[str, Any]:
-    
-    # csv_buffer = StringIO()
-    # data.to_csv(csv_buffer, index=False)
-    
 
-    # Define the blob client
-    # container_name = "atom-matching"
-    # blob_name = f"{container_name}/{blob_url}"
     blob_client = self.blob_service_client.get_blob_client(container=container_name
                                                       , blob=blob_url)
-    pq_data = self._get_parquet(data)
-    result_dict = blob_client.upload_blob(pq_data, overwrite=True)
-    # Upload the CSV to blob storage
-    # result_dict = blob_client.upload_blob(csv_buffer.getvalue()
-    #                                       , overwrite=True)
+    if blob_url[-3:] =='csv':
+      p = BlobCSVFilePrepper()
+      file = p.get_file_for_blob(data)
+    else:
+      p = BlobParquetFilePrepper()
+      file = p.get_file_for_blob(data)
+       
+    result_dict = blob_client.upload_blob(file, overwrite=True)
+
     return result_dict 
 
-    # return func.HttpResponse(
-    #     "DataFrame stored in blob storage successfully.",
-    #     status_code=200
-    # )     
+
+
+  # def _get_parquet(self, df:pd.DataFrame) -> bytes:
+  #   with tempfile.TemporaryDirectory() as temp_dir:
+  #       temp_file_path = os.path.join(temp_dir, "temp.parquet")
+  #       df.to_parquet(temp_file_path, engine="pyarrow")
+
+  #       # Read the Parquet file into memory
+  #       with open(temp_file_path, "rb") as file:
+  #           parquet_data = file.read()
+  #           return parquet_data
+
+
+
+  # def write_data(self, container_name:str, blob_url:str
+  #                , data:pd.DataFrame) -> dict[str, Any]:
+    
+  #   # csv_buffer = StringIO()
+  #   # data.to_csv(csv_buffer, index=False)
+    
+
+  #   # Define the blob client
+  #   # container_name = "atom-matching"
+  #   # blob_name = f"{container_name}/{blob_url}"
+  #   blob_client = self.blob_service_client.get_blob_client(container=container_name
+  #                                                     , blob=blob_url)
+  #   pq_data = self._get_parquet(data)
+  #   result_dict = blob_client.upload_blob(pq_data, overwrite=True)
+  #   # Upload the CSV to blob storage
+  #   # result_dict = blob_client.upload_blob(csv_buffer.getvalue()
+  #   #                                       , overwrite=True)
+  #   return result_dict 
+
+  #   # return func.HttpResponse(
+  #   #     "DataFrame stored in blob storage successfully.",
+  #   #     status_code=200
+  #   # )     
        
 # data = load_data('path/to/yourfile.parquet')
 

@@ -15,24 +15,24 @@ class DataExporter(ABC):
     pass
 
 
-class CSVExporter(DataExporter):
+# class CSVExporter(DataExporter):
 
-  def export_data(self, data_name:str, data:pd.DataFrame):
-    path = self.config.get("location")
-    if not path:
-      raise FileNotFoundError("CSVExporter:No file-path was passed in")
+#   def export_data(self, data_name:str, data:pd.DataFrame):
+#     path = self.config.get("location")
+#     if not path:
+#       raise FileNotFoundError("CSVExporter:No file-path was passed in")
     
-    data.to_csv(f"{path}{data_name}.csv", index=False)
+#     data.to_csv(f"{path}{data_name}.csv", index=False)
 
 
-class ParquetExporter(DataExporter):
+# class ParquetExporter(DataExporter):
 
-  def export_data(self, data_name:str, data:pd.DataFrame):
-    path = self.config.get("location")
-    if not path:
-      raise FileNotFoundError("ParquetExporter:No file-path was passed in")
+#   def export_data(self, data_name:str, data:pd.DataFrame):
+#     path = self.config.get("location")
+#     if not path:
+#       raise FileNotFoundError("ParquetExporter:No file-path was passed in")
     
-    data.to_parquet(f"{path}{data_name}.parquet", index=False)
+#     data.to_parquet(f"{path}{data_name}.parquet", index=False)
     
 
 class AzureBlobExporter(DataExporter):
@@ -53,8 +53,8 @@ class AzureBlobExporter(DataExporter):
   
     result = self.blobClient.write_data(container_name=self.container_name
                                         , blob_url=full_path
-                                        ,data=data)
-    print(result)
+                                        ,data=data)    
+    return result
     
 
 

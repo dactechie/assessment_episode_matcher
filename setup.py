@@ -18,9 +18,23 @@ def get_version():
 setup(
     name='assessment_episode_matcher',
     version=get_version(),
+    author="Aftab Jalal", 
+    author_email="mj@auditlytics.nz", 
+      
     packages=find_packages(),
     install_requires=get_requirements(),
     python_requires='>=3.10',
+
+    # long_description=long_description, 
+    # long_description_content_type="text/markdown", 
+    license="MIT", 
+  
+    # classifiers like program is suitable for python3, just leave as it is. 
+    classifiers=[ 
+        "Programming Language :: Python :: 3", 
+        "License :: OSI Approved :: MIT License", 
+        "Operating System :: OS Independent", 
+    ], 
 )
 
 # if __name__ == '__main__':
