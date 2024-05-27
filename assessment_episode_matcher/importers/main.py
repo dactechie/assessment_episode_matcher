@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+import json
 import pandas as pd
 
 from assessment_episode_matcher.azutil.az_blob_query import AzureBlobQuery
@@ -46,6 +47,16 @@ class LocalFileSource(FileSource):
             return pd.read_parquet(full_path)
         else:
             raise FileNotFoundError(f"File not found: {full_path}")
+
+
+    def load_json_file(self, filepath: str) -> pd.DataFrame:
+        full_path = os.path.join(self.path, filepath)
+        if os.path.isfile(full_path):
+            with open(full_path, 'r') as file:
+              json_data = json.load(file)
+              return json_data
+        else:
+            raise FileNotFoundError(f"File not found: {full_path}")        
         
 
 class BlobFileSource(FileSource):
@@ -63,6 +74,15 @@ class BlobFileSource(FileSource):
                                            prefix, suffix)
         
         return files
+    
+    def load_json_file(self, filename: str, dtype)-> dict:
+        
+        blob_bytes = self.blobClient.load_data(self.container_name,blob_url=filename)
+        if blob_bytes:
+            return json.loads(blob_bytes.read().decode('utf-8'))
+        else:
+            filepath = f"{self.container_name}/{filename}"
+            raise ValueError(f"Failed to load blob data from URL: {filepath}")            
     
     def load_csv_file_to_df(self, filename: str, dtype)-> pd.DataFrame:
         

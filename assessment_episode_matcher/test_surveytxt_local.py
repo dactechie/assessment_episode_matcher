@@ -1,8 +1,6 @@
 import logging
 import json
-from datetime import datetime
-# from pathlib import Path
-# import pandas as pd
+
 from assessment_episode_matcher import project_directory
 from assessment_episode_matcher.importers.main import BlobFileSource, FileSource
 from assessment_episode_matcher.setup.bootstrap import Bootstrap
@@ -11,13 +9,9 @@ from assessment_episode_matcher.utils.fromstr import get_date_from_str
 from assessment_episode_matcher.matching import main as match_helper
 from assessment_episode_matcher.matching.errors import process_errors_warnings
 
-# from assessment_episode_matcher.data_prep import prep_dataframe_nada
-# from assessment_episode_matcher.exporters import NADAbase as out_exporter
-# from assessment_episode_matcher.importers import episodes as imptr_episodes
-# from assessment_episode_matcher.importers import assessments as imptr_atoms
 from assessment_episode_matcher.importers import episodes as EpisodesImporter
 from assessment_episode_matcher.importers import assessments as ATOMsImporter
-from assessment_episode_matcher.exporters.main import AzureBlobExporter #, CSVExporter as AuditExporter
+from assessment_episode_matcher.exporters.main import LocalFileExporter as DataExporter
 # from assessment_episode_matcher.exporters.main import AzureBlobExporter as AuditExporter
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
@@ -78,7 +72,7 @@ def main3():
          ep_cache_to_path = f"{ep_cache_to_path[:-3]}parquet"
          
       exp = AzureBlobExporter(container_name=ep_file_source.container_name) #
-      exp.export_dataframe(data_name=ep_cache_to_path, data=episode_df)   
+      exp.export_data(data_name=ep_cache_to_path, data=episode_df)   
                         # func.HttpResponse(body=json.dumps({"result":"no episode data"}),
                         #         mimetype="application/json", status_code=200)
 
@@ -93,7 +87,7 @@ def main3():
     
     if atom_cache_to_path:
       exp = AzureBlobExporter(container_name=atom_file_source.container_name) #
-      exp.export_dataframe(data_name=atom_cache_to_path, data=atoms_df)    
+      exp.export_data(data_name=atom_cache_to_path, data=atoms_df)    
                             # , prefix="MDS", suffix="AllPrograms")
     if not utdf.has_data(atoms_df):
       logging.error("No ATOMs")
@@ -124,8 +118,7 @@ def main3():
     df_reindexed = final_good.reset_index(drop=True)
 
     exp = AzureBlobExporter(container_name=atom_file_source.container_name) #
-    p_str = f"{reporting_start_str}-{reporting_end_str}"
-    exp.export_dataframe(data_name=f"NADA/{p_str}/forstxt_{p_str}_reindexed.parquet", data=df_reindexed)
+    exp.export_data(data_name=f"NADA/{reporting_start_str}-{reporting_end_str}_reindexed.csv", data=df_reindexed)
     # exp.export_data(data_name=f"NADA/{reporting_start_str}-{reporting_end_str}_reindexed.parquet", data=df_reindexed)      
 
     #   # logging.info("Result object", json.dumps(result))
@@ -137,12 +130,7 @@ def main3():
     # nada = generate_nada_export(df_reindexed, outfile=nada_importfile)
 
     # return nada
-
-  
-       
-
 if __name__ == "__main__":
-  #  load_blob_config()
     res = main3()
 
 

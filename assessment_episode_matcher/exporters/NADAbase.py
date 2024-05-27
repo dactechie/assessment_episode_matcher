@@ -1,7 +1,7 @@
 import pandas as pd
-from utils.dtypes import date_to_str
-from utils.df_ops_base import safe_convert_to_int_strs, prescribe_fields
-from .config.NADAbase import nada_final_fields, notanswered_defaults
+from assessment_episode_matcher.utils.dtypes import date_to_str
+from assessment_episode_matcher.utils.df_ops_base import safe_convert_to_int_strs, prescribe_fields
+from assessment_episode_matcher.exporters.config.NADAbase import nada_final_fields, notanswered_defaults
 
 
 def get_stage_per_episode(df:pd.DataFrame)-> pd.Series:  
@@ -13,8 +13,9 @@ def get_stage_per_episode(df:pd.DataFrame)-> pd.Series:
 def set_not_answered(df1:pd.DataFrame, notanswered_cols:list) -> pd.DataFrame:
   df = df1.copy()
   for col in notanswered_cols:
-    df[col].replace('', -1, inplace=True)
-
+    df[col] = df[col].replace('', -1).infer_objects(copy=False)
+    # infer: instruct pandas to infer the data type of the resulting
+    # column and perform any necessary downcasting.
   return df
 
 

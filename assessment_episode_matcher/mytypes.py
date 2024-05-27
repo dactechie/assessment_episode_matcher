@@ -1,9 +1,34 @@
 from enum import Enum, auto
-from dataclasses import dataclass
-from typing import Optional #, KW_ONLY
+from dataclasses import dataclass, fields
+from typing import Any, Optional #, KW_ONLY
 from collections import namedtuple
 
 
+
+@dataclass
+class CSVTypeObject:
+  header:list[str]
+  rows:list
+
+@dataclass
+class AODWarning:
+  SLK:str
+  RowKey:str
+  drug_name:str
+  field_name:str
+  field_value:Optional[str]=""
+   
+  #  def __str__(self):
+  #   return f"{self.SLK},{self.RowKey},{self.drug_name},{self.field_name}"
+  def to_list(self) -> list[str]:
+    f = [getattr(self, field.name) for field in fields(self)]
+    return f
+    # field_values = []
+    # for field in fields(self):
+    #     value = getattr(self, field.name)
+    #     field_values.append(value)
+    # return field_values
+  
 class DataType(Enum):
   ASSESSMENTS = auto()
   EPISODES = auto()

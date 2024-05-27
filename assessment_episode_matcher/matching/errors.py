@@ -95,36 +95,5 @@ def write_validation_results(errors_warnings:dict[str, pd.DataFrame]
     
     for ew_type_name, errs_warns in errors_warnings.items():
       if utdf.has_data(errs_warns):
-        audit_exporter.export_data(f"{ew_type_name}.csv", errs_warns)       
+        audit_exporter.export_dataframe(f"{ew_type_name}.csv", errs_warns)       
        
-    
-
-    # if utdf.has_data(dates_ewdf):
-    #   audit_exporter.export_data("dates_ew", dates_ewdf)
-    #   # dates_ewdf.to_csv(f'{output_folder}dates_ewdf.csv'
-    #   #                   , index=False)
-    
-    # if utdf.has_data(asmt_key_errors):
-    #    audit_exporter.export_data("asmt_key_errors", asmt_key_errors)
-    #   # asmt_key_errors.to_csv(f'{output_folder}asmt_key_errors.csv'
-    #   #                       , index=False)
-
-    # if utdf.has_data(ep_key_errors):
-    #    audit_exporter.export_data("ep_key_errors", ep_key_errors)
-    #   # ep_key_errors.to_csv(f'{output_folder}ep_key_errors.csv'
-    #   #                      , index=False)
-
-    # if utdf.has_data(asmt_key_warn):
-    #   audit_exporter.export_data("asmt_key_warn", asmt_key_warn)
-
-    # if utdf.has_data(ep_key_warn):
-    #   audit_exporter.export_data("ep_key_warn", ep_key_warn)
-
-
-    # if utdf.has_data(asmt_key_warn):
-    #   asmt_key_warn.to_csv(f'{output_folder}asmt_key_warn.csv'
-    #                        , index=False)
-
-    # if utdf.has_data(ep_key_warn):
-    #   ep_key_warn.to_csv(f'{output_folder}ep_key_warn.csv'
-    #                      , index=False)

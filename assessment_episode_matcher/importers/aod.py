@@ -1,11 +1,13 @@
-import logging
+# import logging
 import pandas as pd
-from data_config import PDC_ODC_ATOMfield_names as PDC_ODC_fields
-from importers.config import ATOM
-from utils.fromstr import range_average
-from utils.df_ops_base import drop_fields
+from assessment_episode_matcher.data_config import PDC_ODC_ATOMfield_names as PDC_ODC_fields
+from assessment_episode_matcher.utils.fromstr import range_average
+from assessment_episode_matcher.utils.df_ops_base import drop_fields
+from assessment_episode_matcher.mytypes import AODWarning
 # import mylogging
 # logging = mylogging.get(__name__)
+
+
 
 
 # TODO: use NADA fields
@@ -65,16 +67,17 @@ def get_drug_category(drug_name:str, aod_groupings:dict) -> tuple[str, int]:
 #         qty_str = f"{qty_str}; {typical_unit} units."
 #   return qty_str, typical_qty
 
+  # def __init__(self, item:dict, drug_name, field_name, assessment):
 
 
-def get_warning(item, drugname, field_name:str, assessment):  
-  warning = ( assessment.SLK, assessment.RowKey,         
-          { drugname: item.get(drugname),
-           'InvalidValue': item.get(field_name), 'InvalidFieldName': field_name}
-  )
-  return warning
+# def get_warning(item:dict, drugname, field_name:str, assessment):  
+#   warning = ( assessment.SLK, assessment.RowKey,         
+#           { drugname: item.get(drugname),
+#            'InvalidValue': item.get(field_name), 'InvalidFieldName': field_name}
+#   )
+#   return warning
 
-def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float, str, str, tuple|None]: #tuple[float|None, str|None, str]:
+def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float, str, str, AODWarning|None]: #tuple[float|None, str|None, str]:
   field_perocc = field_names['per_occassion']
   field_units = field_names['units']
 
@@ -82,26 +85,38 @@ def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float
   typical_unit = item.get(field_units,'')
  
   if not typical_qty:
-     warning = get_warning(item, field_names['drug_name'], field_perocc, assessment)
+     warning = AODWarning(assessment['SLK'],assessment['RowKey']
+                          ,drug_name=field_names['drug_name']
+                          , field_name=field_perocc)
+    #  warning = get_warning(item, field_names['drug_name'], field_perocc, assessment)
      return typical_qty, "", "", warning
   if not pd.isna(typical_qty):
       if typical_qty == '0': # Don't bother with unit if qty = 0
          return 0.0, "", "0", None
       if typical_qty == 'Other':
         #  logging.warn(f"'Other' used for HowMuchPerOcassion. Un-reportable value { assessment.get('RowKey')}")
-         warning = get_warning(item, field_names['drug_name'], field_perocc, assessment)
+        #  warning = get_warning(item, field_names['drug_name'], field_perocc, assessment)
+         warning = AODWarning(assessment['SLK'],assessment['RowKey']
+                               , drug_name=field_names['drug_name']
+                          , field_name=field_perocc
+                          , field_value=typical_qty)
          return 0.0, "", "", warning
       typical_qty = range_average(typical_qty)
   if not typical_unit:
-     warning = get_warning(item, field_names['drug_name'], field_units, assessment)
+    #  warning = get_warning(item, field_names['drug_name'], field_units, assessment)
+     warning = AODWarning(assessment['SLK'],assessment['RowKey']
+                          ,drug_name=field_names['drug_name']
+                          , field_name=field_units
+                          , field_value=typical_unit)
      return typical_qty, "", f"{typical_qty}", warning
 
   return typical_qty, typical_unit, f"{typical_qty}; {typical_unit}", None
 
 
-def process_drug_list_for_assessment(pdc_odc_colname:str, assessment):
+def process_drug_list_for_assessment(pdc_odc_colname:str, assessment, config:dict):
   row_data = {}
   warnings = []
+  drug_categories= config["drug_categories"]
   for item in assessment[pdc_odc_colname]: #'ODC: []' in row
     # Extract data for each substance
     field_names  = PDC_ODC_fields[pdc_odc_colname]
@@ -109,7 +124,7 @@ def process_drug_list_for_assessment(pdc_odc_colname:str, assessment):
     field_use_ndays = field_names['used_in_last_4wks']
 
     if not item: # {}
-      continue
+      continue 
 
     substance = item.get(field_drug_name, '')    
     if not substance:
@@ -117,14 +132,21 @@ def process_drug_list_for_assessment(pdc_odc_colname:str, assessment):
       continue
     # unique_subtances.append(substance) 
     mapped_drug, found_category = get_drug_category (substance
-                                                     , aod_groupings=ATOM.MAP_AOD_GROUPINGS)
+                                                     , aod_groupings=drug_categories)
     if not found_category:
-       if not row_data or not( 'Another Drug1' in row_data) or pd.isna(row_data['Another Drug1']):
-          row_data['Another Drug1'] = mapped_drug
-          mapped_drug ='Another Drug1'
-       else:
-          row_data['Another Drug2'] = mapped_drug
-          mapped_drug ='Another Drug2'
+      warning = AODWarning(assessment['SLK'],assessment['RowKey']
+                           ,drug_name=substance, field_name=field_drug_name)
+      # warning = get_warning(item
+      #                       , drugname=substance
+      #              ,field_name=field_drug_name
+      #              ,assessment=assessment)
+      warnings.append(warning)
+      if not row_data or not( 'Another Drug1' in row_data) or pd.isna(row_data['Another Drug1']):
+        row_data['Another Drug1'] = mapped_drug
+        mapped_drug ='Another Drug1'
+      else:
+        row_data['Another Drug2'] = mapped_drug
+        mapped_drug ='Another Drug2'
                  
     # if not field_use_ndays in item:
     #   logging.error(f"Data Quality error {field_use_ndays} not in drug({substance})dict. \
@@ -146,7 +168,7 @@ def process_drug_list_for_assessment(pdc_odc_colname:str, assessment):
   return row_data, warnings
 
 
-def normalize_pdc_odc(df):
+def normalize_pdc_odc(df:pd.DataFrame, config:dict):
   new_data = []
   warnings = []
   for index, row in df.iterrows():
@@ -154,11 +176,11 @@ def normalize_pdc_odc(df):
     pdc_row_data ={}
     odc_row_data ={}
     if 'PDC' in row and isinstance(row['PDC'], list):
-      pdc_row_data, warnings1 = process_drug_list_for_assessment('PDC', row)
+      pdc_row_data, warnings1 = process_drug_list_for_assessment('PDC', row, config)
       if warnings1:
          warnings.extend(warnings1)
     if 'ODC' in row and isinstance(row['ODC'], list):
-      odc_row_data, warnings2 = process_drug_list_for_assessment('ODC', row)
+      odc_row_data, warnings2 = process_drug_list_for_assessment('ODC', row, config)
       if warnings2:
          warnings.extend(warnings2)
     
@@ -181,10 +203,10 @@ def normalize_pdc_odc(df):
 
 
 
-def expand_drug_info(df1:pd.DataFrame) ->  tuple[pd.DataFrame, list]:
+def expand_drug_info(df1:pd.DataFrame, config:dict) ->  tuple[pd.DataFrame, list[AODWarning]]:
 
   #  masked_rows=  df1[('ODC' in df1) and df1['ODC'].apply(lambda x: isinstance(x,list) and len(x) > 0 )]
-  normd_drugs_df, warnings = normalize_pdc_odc(df1)
+  normd_drugs_df, warnings = normalize_pdc_odc(df1, config)
     # debug: normd_drugs_df.loc[2][normd_drugs_df.loc[2].notna()]
   cloned_df = df1.join(normd_drugs_df)
   cloned_df = drop_fields(cloned_df,['PDC','ODC'])
@@ -314,7 +336,7 @@ if __name__ == "__main__":
       ]
   })
 
-  out, warnings = expand_drug_info(df)
-  # TODO : delete PDC and ODC columns
-  print(out)
-  print(warnings)
+  # out, warnings = expand_drug_info(df)
+  # # TODO : delete PDC and ODC columns
+  # print(out)
+  # print(warnings)

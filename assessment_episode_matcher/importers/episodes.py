@@ -7,11 +7,11 @@ from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils.dtypes import blank_to_today_str, convert_to_datetime
 from assessment_episode_matcher.utils.df_ops_base import has_data
 from assessment_episode_matcher.utils import io
-from assessment_episode_matcher.setup.bootstrap import Bootstrap
+# from assessment_episode_matcher.setup.bootstrap import Bootstrap
 
 # from utils.io import read_parquet, write_parquet
 
-def prepare(ep_df1:pd.DataFrame, start_date:str, end_date:str) -> pd.DataFrame:
+def prepare(ep_df1:pd.DataFrame) -> pd.DataFrame:
   # processed_folder = Bootstrap.get_path("processed_dir")
 
   ep_df = ep_df1[EpCfg.columns_of_interest].copy()
@@ -101,7 +101,7 @@ def import_data(eps_st:str,  eps_end:str, file_source:FileSource
   # TODO: log the dropped episodes
   raw_df['END DATE'] = raw_df['END DATE'].apply(lambda x: blank_to_today_str(x))
 
-  processed_df = prepare(raw_df, eps_st, eps_end)
+  processed_df = prepare(raw_df)
   return processed_df, file_path
 
 

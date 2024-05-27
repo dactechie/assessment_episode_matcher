@@ -5,8 +5,9 @@ from io import BytesIO
 import pandas as pd
 from azure.storage.blob import BlobServiceClient #, BlobClient, ContainerClient
 
+from assessment_episode_matcher.mytypes import CSVTypeObject
 from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManager
-from assessment_episode_matcher.azutil.file_types import BlobCSVFilePrepper, BlobParquetFilePrepper
+from assessment_episode_matcher.azutil.file_types import BlobCSVFilePrepper, BlobDataFrameCSVFilePrepper, BlobDataFrameParquetFilePrepper
 # import mylogging
 
 # logging = mylogging.get('azure.storage')
@@ -43,7 +44,9 @@ class AzureBlobQuery(object):
       
       try:
         # blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
-        blob_client = self.blob_service_client.get_blob_client(container=container_name, blob=blob_url)
+        blob_client = self.blob_service_client\
+                          .get_blob_client(container=container_name
+                                           , blob=blob_url)
         blob_data = blob_client.download_blob().readall()
 
         logging.debug(f"Loaded blob bytes of length {len(blob_data)}.")
@@ -58,23 +61,36 @@ class AzureBlobQuery(object):
         return None       
 
 
-  def write_data(self, container_name:str, blob_url:str
+  def write_dataframe(self, container_name:str, blob_url:str
                  , data:pd.DataFrame) -> dict[str, Any]:
 
     blob_client = self.blob_service_client.get_blob_client(container=container_name
                                                       , blob=blob_url)
     if blob_url[-3:] =='csv':
-      p = BlobCSVFilePrepper()
-      file = p.get_file_for_blob(data)
+      p = BlobDataFrameCSVFilePrepper()    
     else:
-      p = BlobParquetFilePrepper()
-      file = p.get_file_for_blob(data)
+      p = BlobDataFrameParquetFilePrepper()
+      
+    file = p.get_file_for_blob(data)
        
     result_dict = blob_client.upload_blob(file, overwrite=True)
 
-    return result_dict 
+    return result_dict
+  
 
 
+  def write_csv(self, container_name:str, blob_url:str
+                 , data:CSVTypeObject) -> dict[str, Any]:
+    
+    csvprep = BlobCSVFilePrepper()
+    csv_data = csvprep.get_file_for_blob(data)
+
+    # Upload the CSV data to Azure Blob Storage
+    blob_client = self.blob_service_client \
+                  .get_blob_client(container=container_name
+                                  , blob=blob_url)
+    result_dict = blob_client.upload_blob(csv_data, overwrite=True)
+    return result_dict
 
   # def _get_parquet(self, df:pd.DataFrame) -> bytes:
   #   with tempfile.TemporaryDirectory() as temp_dir:
