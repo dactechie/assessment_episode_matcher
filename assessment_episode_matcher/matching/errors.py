@@ -5,7 +5,38 @@ import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.mytypes import IssueType, IssueLevel, DataKeys as dk
 from assessment_episode_matcher.configs import audit as audit_cfg
 
-def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2
+
+"""
+  #"Key" issues
+    # Assessment issues: 
+      # not matched to any episode, b/c:
+         # assessment SLK not in any episode -> ERROR
+         # SLK+Program not in any episode --> WARNING (keep in good dataset)
+    # Episode issues:
+      # zero assessments, b/c: (note: eps at end of reporting period may not have asmts)
+        # episode SLK not in any assessment  -> ERROR 
+        # SLK+Program not in Assessment-list -> WARNING (keep in good dataset)
+"""
+
+def key_matching_errwarn_names(merge_key: str, slk_prog_onlyin: pd.DataFrame, it1: IssueType,
+                        slk_onlyin: pd.DataFrame,  it2: IssueType):
+    # slk_prog_onlyin (SLK+Program) doesn't need to have anytihng that is also in slk_onlyin (SLK)
+    # redundant
+    slk_prog_onlyin1, _ = utdf.get_delta_by_key(
+        slk_prog_onlyin, slk_onlyin, key=merge_key)
+    # mask_common = slk_prog_onlyin[matchkey2].isin(slk_onlyin[matchkey2])
+    slk_prog_warn = slk_prog_onlyin1.assign(
+        issue_type=it1.name,
+        issue_level=IssueLevel.WARNING.name)
+
+    slk_onlyin_error = slk_onlyin.assign(issue_type=it2.name,
+                                         issue_level=IssueLevel.ERROR.name)
+    # only_in_errors = pd.concat([slk_prog_new, slk_onlyin_new])
+
+    return slk_onlyin_error, slk_prog_warn
+
+
+def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
                             ,period_start:date, period_end:date
                             , audit_exporter:DataExporter):
 
@@ -42,10 +73,22 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2
 
     # limit columns to write out
     final_dates_ew = final_dates_ew[audit_cfg.COLUMNS_AUDIT_DATES]
-    slkonlyin_ep_error = slkonlyin_ep_error[audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT]
-    slkprogonlyin_ep_warn = slkprogonlyin_ep_warn[audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENTPROG]
-    slkonlyin_amst_error = slkonlyin_amst_error[audit_cfg.COLUMNS_AUDIT_ASMTKEY]
-    slkprogonlyin_amst_warn = slkprogonlyin_amst_warn[audit_cfg.COLUMNS_AUDIT_ASMTKEY]
+    
+    slkonlyin_ep_error = slkonlyin_ep_error[
+       [k for k in audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT 
+        if k in slkonlyin_ep_error.columns]
+        ]
+    slkprogonlyin_ep_warn = slkprogonlyin_ep_warn[
+       audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENTPROG
+        ]
+    slkonlyin_amst_error = slkonlyin_amst_error[
+        [k for k in audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENT
+        if k in slkonlyin_amst_error.columns
+        ]
+    ]
+       
+
+    slkprogonlyin_amst_warn = slkprogonlyin_amst_warn[audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENTPROG]
 
 
     ew2 = {
@@ -59,34 +102,6 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2
     write_validation_results(ew2, audit_exporter)        
 
 
-"""
-  #"Key" issues
-    # Assessment issues: 
-      # not matched to any episode, b/c:
-         # assessment SLK not in any episode -> ERROR
-         # SLK+Program not in any episode --> WARNING (keep in good dataset)
-    # Episode issues:
-      # zero assessments, b/c: (note: eps at end of reporting period may not have asmts)
-        # episode SLK not in any assessment  -> ERROR 
-        # SLK+Program not in Assessment-list -> WARNING (keep in good dataset)
-"""
-
-def key_matching_errwarn_names(merge_key: str, slk_prog_onlyin: pd.DataFrame, it1: IssueType,
-                        slk_onlyin: pd.DataFrame,  it2: IssueType):
-    # slk_prog_onlyin (SLK+Program) doesn't need to have anytihng that is also in slk_onlyin (SLK)
-    # redundant
-    slk_prog_onlyin1, _ = utdf.get_delta_by_key(
-        slk_prog_onlyin, slk_onlyin, key=merge_key)
-    # mask_common = slk_prog_onlyin[matchkey2].isin(slk_onlyin[matchkey2])
-    slk_prog_warn = slk_prog_onlyin1.assign(
-        issue_type=it1.name,
-        issue_level=IssueLevel.WARNING.name)
-
-    slk_onlyin_error = slk_onlyin.assign(issue_type=it2.name,
-                                         issue_level=IssueLevel.ERROR.name)
-    # only_in_errors = pd.concat([slk_prog_new, slk_onlyin_new])
-
-    return slk_onlyin_error, slk_prog_warn
 
 
 

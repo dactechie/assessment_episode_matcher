@@ -4,7 +4,6 @@ from typing import Any, Optional #, KW_ONLY
 from collections import namedtuple
 
 
-
 @dataclass
 class CSVTypeObject:
   header:list[str]
@@ -54,10 +53,6 @@ class DataKeys(Enum):
   assessment_date = 'AssessmentDate'
   episode_start_date = 'CommencementDate'
   episode_end_date = 'EndDate'
-
-class DatasetType(Enum):
-    ASSESSMENT = 'assessment'
-    EPISODE = 'episode'
 
 
 class IssueLevel(Enum):

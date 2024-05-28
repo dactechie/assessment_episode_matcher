@@ -10,11 +10,12 @@ USAGE:
     Set the environment variables with your own values before running the sample:
     1) AZURE_STORAGE_CONNECTION_STRING - the connection string to your storage account
 """
+import os
 import logging
 import pandas as pd
 from azure.data.tables import TableClient, TableEntity#, TableTransaction
 from azure.core.exceptions import HttpResponseError
-from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManager
+from assessment_episode_matcher.utils.environment import ConfigKeys
 # import mylogging
 
 # logging = mylogging.get(__name__)
@@ -22,9 +23,8 @@ from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManag
 class SampleTablesQuery(object):
 
     def __init__(self, table_name:str):
-      config = ConfigManager().config
-    
-      self.connection_string = str(config.get(ConfigKeys.AZURE_STORAGE_CONNECTION_STRING.value,""))
+         
+      self.connection_string =  str(os.environ.get(ConfigKeys.AZURE_STORAGE_CONNECTION_STRING.value,""))
 
       self.table_name = table_name
       logging.info(f"SampleTablesQuery initialised with connection_string: {self.connection_string}")

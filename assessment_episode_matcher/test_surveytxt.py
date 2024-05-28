@@ -43,7 +43,13 @@ from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
 #     st.to_csv(outfile, index=False)
         
 #     return st
-    
+
+def load_blob_config():
+  config_file_source = BlobFileSource(container_name="atom-matching"
+                                            , folder_path=".")
+  config = config_file_source.load_json_file(filename="configuration.json", dtype=str)
+  # print(config)
+  return config
 
 def main3():
     # TODO:
@@ -106,9 +112,12 @@ def main3():
         print("No data to match. Ending")
         return None    
    
+    config = {} #load_blob_config()
     final_good, ew = match_helper.match_and_get_issues(e_df, a_df
                                           , inperiod_atomslk_notin_ep
-                                          , inperiod_epslk_notin_atom, slack_for_matching)
+                                          , inperiod_epslk_notin_atom
+                                          , slack_for_matching
+                                          , config)
 
     warning_asmt_ids  = final_good.SLK_RowKey.unique()
    

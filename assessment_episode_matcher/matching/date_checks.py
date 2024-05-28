@@ -48,8 +48,6 @@ def date_boundary_validators(limit_days:int) -> list[ValidationMaskIssueTuple]:
                 issue_type = IssueType.DATE_MISMATCH,
       )
     ),
-    
-   
   ]
 
 
@@ -87,15 +85,20 @@ def gap_asmtdate_epsd_boundaries(merged_df1:pd.DataFrame):
   return merged_df
 
 
-def keep_nearest_mismatching_episode(unmatched_asmt:pd.DataFrame) -> pd.DataFrame:
+def keep_nearest_mismatching_episode(
+      unmatched_asmt:pd.DataFrame) -> pd.DataFrame:
    unm = unmatched_asmt.copy()
-   unm['min_days'] = np.minimum(np.abs(unm['days_from_start']), np.abs(unm['days_from_end']))
+   unm['min_days'] = np.minimum(
+                        np.abs(unm['days_from_start'])
+                        , np.abs(unm['days_from_end']))
    ew_df = unm.sort_values(['SLK_RowKey', 'min_days'])
    ew_df = ew_df.drop_duplicates('SLK_RowKey', keep='first')
    return ew_df
 
 
-def get_assessment_boundary_issues(dt_unmtch_asmt:pd.DataFrame, mask_isuetypes:list[ValidationMaskIssueTuple], ukey:str) \
+def get_assessment_boundary_issues(
+              dt_unmtch_asmt:pd.DataFrame
+              , mask_isuetypes:list[ValidationMaskIssueTuple]) \
                       -> pd.DataFrame:
     gaps_df = gap_asmtdate_epsd_boundaries(dt_unmtch_asmt)
     nearest_remaining_mismatch = keep_nearest_mismatching_episode(gaps_df)

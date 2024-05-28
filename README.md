@@ -29,3 +29,5 @@ make sure you have pip install twine  keyring artifacts-keyring
          Survey.txt write to blob storage.
 0.5.1 - AOD warnings, rename reindexed file to match format prefix_date-range_suffix: prefix:forstxt_
 0.5.2 - Fixed Destination Paths (on blob storage)
+0.5.3 - Load Blob Config for drug Mapping, etc
+0.5.4 - code path - no config - errors columns

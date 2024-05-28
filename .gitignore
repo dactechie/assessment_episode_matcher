@@ -2,7 +2,7 @@
 *.json
 *.csv
 *.parquet
-*.txt
+# *.txt
 *.xlsx
 
 # Byte-compiled / optimized / DLL files

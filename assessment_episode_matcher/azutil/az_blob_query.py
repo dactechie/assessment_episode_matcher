@@ -1,31 +1,35 @@
 
+import os
 import logging
 from typing import Any
 from io import BytesIO
 import pandas as pd
 from azure.storage.blob import BlobServiceClient #, BlobClient, ContainerClient
-
 from assessment_episode_matcher.mytypes import CSVTypeObject
-from assessment_episode_matcher.utils.environment import ConfigKeys, ConfigManager
-from assessment_episode_matcher.azutil.file_types import BlobCSVFilePrepper, BlobDataFrameCSVFilePrepper, BlobDataFrameParquetFilePrepper
+from assessment_episode_matcher.utils.environment import ConfigKeys
+import assessment_episode_matcher.azutil.file_types as AzUtilFtypes
 # import mylogging
 
 # logging = mylogging.get('azure.storage')
 
 
 class AzureBlobQuery(object):
-  def __init__(self):
-      config = ConfigManager().config
-    
-      # self.connection_string = str(config.get(ConfigKeys.AZURE_STORAGE_CONNECTION_STRING,"Help"))
-      self.connection_string = str(config.get(ConfigKeys.AZURE_BLOB_CONNECTION_STRING.value,"Help"))
-      
+  _instance = None
+
+  def __new__(cls):
+      if cls._instance is None:
+          cls._instance = super(AzureBlobQuery, cls).__new__(cls)
+          cls._instance.initialize()
+      return cls._instance
+
+  def initialize(self):
+      self.connection_string = str(os.environ.get(ConfigKeys.AZURE_BLOB_CONNECTION_STRING.value, "Help"))
       if self.connection_string == 'Help':
-        logging.error("Blob Connection string not found.")
-        self.connection_string = ""
-        # st.warning("An error occurred while loading the data. Please try again later.")
-        return None
-      self.blob_service_client =  BlobServiceClient.from_connection_string(self.connection_string)
+          logging.error("Blob Connection string not found.")
+          self.connection_string = ""
+          # st.warning("An error occurred while loading the data. Please try again later.")
+          return None
+      self.blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
 
 
   def list_files(self, container_name: str, folder_path:str , prefix: str, suffix: str) -> list[str]:
@@ -63,13 +67,13 @@ class AzureBlobQuery(object):
 
   def write_dataframe(self, container_name:str, blob_url:str
                  , data:pd.DataFrame) -> dict[str, Any]:
-
+    
     blob_client = self.blob_service_client.get_blob_client(container=container_name
                                                       , blob=blob_url)
     if blob_url[-3:] =='csv':
-      p = BlobDataFrameCSVFilePrepper()    
+      p = AzUtilFtypes.BlobDataFrameCSVFilePrepper()    
     else:
-      p = BlobDataFrameParquetFilePrepper()
+      p = AzUtilFtypes.BlobDataFrameParquetFilePrepper()
       
     file = p.get_file_for_blob(data)
        
@@ -82,7 +86,7 @@ class AzureBlobQuery(object):
   def write_csv(self, container_name:str, blob_url:str
                  , data:CSVTypeObject) -> dict[str, Any]:
     
-    csvprep = BlobCSVFilePrepper()
+    csvprep = AzUtilFtypes.BlobCSVFilePrepper()
     csv_data = csvprep.get_file_for_blob(data)
 
     # Upload the CSV data to Azure Blob Storage

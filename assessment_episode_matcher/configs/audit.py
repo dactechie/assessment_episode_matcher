@@ -27,27 +27,35 @@ COLUMNS_AUDIT_EPKEY_CLIENT = [
   , "EndDate"
   , "SLK"
   , "Program"
-
 ]
 
 COLUMNS_AUDIT_EPKEY_CLIENTPROG = [ 
  *COLUMNS_AUDIT_EPKEY_CLIENT, "SLK_Program"
 ]
 
+COLUMNS_AUDIT_EPKEY_CLIENT = [ *COLUMNS_AUDIT_EPKEY_CLIENT
+                            , "closest_atom_SLK"]
 
-COLUMNS_AUDIT_ASMTKEY = [ 
+
+
+COLUMNS_AUDIT_ASMTKEY_CLIENT = [ 
    "SLK"
   , "RowKey"
 	, "AssessmentDate"
   , "Program"
 	, "Staff"
 	, "SurveyName"
-
 ]
 
+COLUMNS_AUDIT_ASMTKEY_CLIENTPROG = COLUMNS_AUDIT_ASMTKEY_CLIENT.copy()
 
+COLUMNS_AUDIT_ASMTKEY_CLIENT = [
+  *COLUMNS_AUDIT_ASMTKEY_CLIENTPROG 
+  , "closest_episode_SLK"]
 
 COLUMNS_AUDIT_DATES.extend(additional_fields)
 COLUMNS_AUDIT_EPKEY_CLIENT.extend(additional_fields)
 COLUMNS_AUDIT_EPKEY_CLIENTPROG.extend(additional_fields)
-COLUMNS_AUDIT_ASMTKEY.extend(additional_fields)
+
+COLUMNS_AUDIT_ASMTKEY_CLIENTPROG.extend(additional_fields)
+COLUMNS_AUDIT_ASMTKEY_CLIENT.extend(additional_fields)

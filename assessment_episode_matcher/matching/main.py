@@ -1,13 +1,16 @@
 import logging
 from datetime import date
+from typing import Optional
 import pandas as pd
 from assessment_episode_matcher.mytypes import DataKeys as dk, IssueLevel, IssueType, Purpose #, ValidationIssue
 # from utils.environment import MyEnvironmentConfig, ConfigKeys
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.utils import base as utbase
+from assessment_episode_matcher.utils import fromstr as utstr
 import assessment_episode_matcher.matching.date_checks as dtchk
 from assessment_episode_matcher.matching import increasing_slack as mis
-from assessment_episode_matcher.setup.bootstrap import Bootstrap
+# from assessment_episode_matcher.setup.bootstrap import Bootstrap
+SLK_MATCH_THRESHOLD = 0.75
 
 def get_data_for_matching2(episode_df, atom_df, start_date:date
                            , end_date:date, slack_for_matching) \
@@ -206,7 +209,7 @@ def perform_date_matches(merged_df: pd.DataFrame, match_key:str, slack_ndays:int
     mask_isuetype_map = dtchk.date_boundary_validators(limit_days=slack_ndays)
     # validation_issues, matched_df, invalid_indices =
     ew_df = dtchk.get_assessment_boundary_issues(\
-       dt_unmat_asmts, mask_isuetype_map, match_key)
+       dt_unmat_asmts, mask_isuetype_map)
     
     if not utdf.has_data(duplicate_rows_dfs):
        return result_matched_df, ew_df
@@ -360,7 +363,21 @@ def fix_incorrect_program( slk_datematched:pd.DataFrame) -> pd.DataFrame:
     return slk_datematched
 
 
-def match_and_get_issues(e_df, a_df, inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom, slack_for_matching):
+def get_closest_slk_match (notmatched_slks:list[str]
+                           , slks:pd.Series
+                           , match_threshold=SLK_MATCH_THRESHOLD) -> pd.Series:
+  result = slks.apply(lambda x: utstr
+                      .find_closest_match(x
+                                          , notmatched_slks
+                                          , match_threshold))
+  return result
+
+   
+def match_and_get_issues(e_df, a_df
+                         , inperiod_atomslk_notin_ep
+                         , inperiod_epslk_notin_atom
+                         , slack_for_matching
+                         , config:Optional[dict]={}):
     """
       Perform Date Matching  - Assessment has to fall within Episode Start and End dates
       Steps: 
@@ -412,6 +429,16 @@ def match_and_get_issues(e_df, a_df, inperiod_atomslk_notin_ep, inperiod_epslk_n
     print(f"\n\t only-in-ATOM: {len(inperiod_atomslk_notin_ep)}  ; only in Episode: {len(inperiod_epslk_notin_atom)} ")
     slk_onlyinass = pd.concat([slk_onlyinass, inperiod_atomslk_notin_ep])
     slk_onlyin_ep = pd.concat([slk_onlyin_ep, inperiod_epslk_notin_atom])
+
+    if config and config.get("get_nearest_slk",0) == 1:
+      slk_onlyin_ep['closest_atom_SLK'] = get_closest_slk_match(           
+              a_ineprogs.SLK.unique().tolist()
+              , slk_onlyin_ep.SLK
+              )
+      
+      slk_onlyinass['closest_episode_SLK'] = get_closest_slk_match(
+              e_df.SLK.unique().tolist()
+              , slk_onlyinass.SLK )
 
     ew = {
         'slk_onlyinass': slk_onlyinass,

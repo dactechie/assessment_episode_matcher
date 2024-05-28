@@ -1,6 +1,15 @@
 import logging
 import json
 from datetime import datetime, date
+import difflib
+from typing import Optional
+
+
+def find_closest_match(slk: str, slks: list[str], pc_match: float) -> Optional[str]:
+    closest_match = difflib.get_close_matches(slk, slks, n=1, cutoff=pc_match)
+    return closest_match[0] if closest_match else None
+
+
 # import numpy as np
 
 # def convert_format_datestr(date_string:str, from_format:str, to_format:str) -> tuple[str, date]:

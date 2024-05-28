@@ -1,3 +1,4 @@
+import os
 import logging
 import json
 
@@ -11,7 +12,7 @@ from assessment_episode_matcher.matching.errors import process_errors_warnings
 
 from assessment_episode_matcher.importers import episodes as EpisodesImporter
 from assessment_episode_matcher.importers import assessments as ATOMsImporter
-from assessment_episode_matcher.exporters.main import LocalFileExporter as DataExporter
+from assessment_episode_matcher.exporters import main as  ExporterTypes #import LocalFileExporter as DataExporter
 # from assessment_episode_matcher.exporters.main import AzureBlobExporter as AuditExporter
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
@@ -42,14 +43,11 @@ from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
 def main3():
     # TODO:
     # envinronemnt setup : Config setup, Expected Directories create, logging setup
-    bstrap = Bootstrap.setup(project_directory, env="prod")
+    # bstrap = Bootstrap.setup(project_directory, env="prod")
     container = "atom-matching"
     ep_folder, asmt_folder = "MDS", "ATOM"
     
-    cfg = bstrap.config #, bstrap.logger
-    # ConfigManager.setup('dev')
-    # cfg = ConfigManager().config
-    slack_for_matching = int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK.value, 7))
+    slack_for_matching = 7 # int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK.value, 7))
     
     reporting_start_str, reporting_end_str =  '20220101', '20240331'
 
@@ -71,8 +69,8 @@ def main3():
       if ep_cache_to_path[-3:] =='csv':
          ep_cache_to_path = f"{ep_cache_to_path[:-3]}parquet"
          
-      exp = AzureBlobExporter(container_name=ep_file_source.container_name) #
-      exp.export_data(data_name=ep_cache_to_path, data=episode_df)   
+      exp = ExporterTypes.AzureBlobExporter(container_name=ep_file_source.container_name) #
+      exp.export_dataframe(data_name=ep_cache_to_path, data=episode_df)   
                         # func.HttpResponse(body=json.dumps({"result":"no episode data"}),
                         #         mimetype="application/json", status_code=200)
 
@@ -86,8 +84,8 @@ def main3():
                             , purpose=Purpose.NADA, refresh=True)
     
     if atom_cache_to_path:
-      exp = AzureBlobExporter(container_name=atom_file_source.container_name) #
-      exp.export_data(data_name=atom_cache_to_path, data=atoms_df)    
+      exp =  ExporterTypes.AzureBlobExporter(container_name=atom_file_source.container_name) #
+      exp.export_dataframe(data_name=atom_cache_to_path, data=atoms_df)    
                             # , prefix="MDS", suffix="AllPrograms")
     if not utdf.has_data(atoms_df):
       logging.error("No ATOMs")
@@ -106,7 +104,7 @@ def main3():
 
     warning_asmt_ids  = final_good.SLK_RowKey.unique()
    
-    ae = AzureBlobExporter(container_name=atom_file_source.container_name
+    ae = ExporterTypes.AzureBlobExporter(container_name=atom_file_source.container_name
                            ,config={'location' : 'errors_warnings'})
 
     process_errors_warnings(ew, warning_asmt_ids, dk.client_id.value
@@ -117,8 +115,8 @@ def main3():
 
     df_reindexed = final_good.reset_index(drop=True)
 
-    exp = AzureBlobExporter(container_name=atom_file_source.container_name) #
-    exp.export_data(data_name=f"NADA/{reporting_start_str}-{reporting_end_str}_reindexed.csv", data=df_reindexed)
+    exp = ExporterTypes.AzureBlobExporter(container_name=atom_file_source.container_name) #
+    exp.export_csv(data_name=f"NADA/{reporting_start_str}-{reporting_end_str}_reindexed.csv", data=df_reindexed)
     # exp.export_data(data_name=f"NADA/{reporting_start_str}-{reporting_end_str}_reindexed.parquet", data=df_reindexed)      
 
     #   # logging.info("Result object", json.dumps(result))

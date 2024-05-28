@@ -29,12 +29,8 @@ class ConfigManager:
     def setup(cls, root, env:str):
         cls.env = env
         env_file = f'{root}/.env.{cls.env}'
-        if not os.path.isfile(env_file):
-            raise FileNotFoundError(f"Environment file {env_file} not found.")
-            
-        # load_dotenv: does not override existing environment variables by default.
-        # It only sets environment variables that are not already defined.
-        load_dotenv(env_file)
+        if  os.path.isfile(env_file):
+            load_dotenv(env_file)
 
         cls.env_config = {key: value for key, value in os.environ.items()}
         
