@@ -13,10 +13,10 @@ def import_data(start_date:str, end_date:str
                           , start_date
                           , end_date
                           , prefix=f"{prefix}"
-                          , suffix=f"{suffix}.parquet"
+                          , suffix=f"{suffix}.csv"
                           )
   if file_path:
-    processed_df = file_source.load_parquet_file_to_df(file_path)
+    processed_df = file_source.load_csv_file_to_df(file_path, str)
     # processed_df = io.read_parquet_to_df(Path(file_path))
     if not(isinstance(processed_df, type(None)) or processed_df.empty):
       logging.debug(f"found & returning parquet file. {file_path}")
