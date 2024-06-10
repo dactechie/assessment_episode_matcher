@@ -26,9 +26,9 @@ class AzureBlobQuery(object):
       self.connection_string = str(os.environ.get(ConfigKeys.AZURE_BLOB_CONNECTION_STRING.value, "Help"))
       if self.connection_string == 'Help':
           logging.error("Blob Connection string not found.")
-          self.connection_string = ""
+          raise Exception("Blob Connection string not found.")
           # st.warning("An error occurred while loading the data. Please try again later.")
-          return None
+          
       self.blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
 
 

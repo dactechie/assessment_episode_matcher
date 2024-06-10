@@ -1,4 +1,3 @@
-from pathlib import Path
 import logging
 import pandas as pd
 from assessment_episode_matcher.configs import episodes as EpCfg
@@ -10,11 +9,20 @@ from assessment_episode_matcher.utils import io
 # from assessment_episode_matcher.setup.bootstrap import Bootstrap
 
 # from utils.io import read_parquet, write_parquet
+def get_cols_of_interest(df_columns) -> list[str]:
+  cols = [] 
+  for c in EpCfg.columns_of_interest:
+    if c in df_columns:
+      cols.append(c)
+    else:
+      logging.warn(f"Skipping Column from MDS dataset: {c}")
+  return cols
+  
 
 def prepare(ep_df1:pd.DataFrame) -> pd.DataFrame:
   # processed_folder = Bootstrap.get_path("processed_dir")
-
-  ep_df = ep_df1[EpCfg.columns_of_interest].copy()
+  cols = get_cols_of_interest(ep_df1.columns)
+  ep_df = ep_df1[cols].copy()
   ep_df['Program'] = ep_df['ESTABLISHMENT IDENTIFIER'].map(EstablishmentID_Program)
   
 #  convert_to_datetime(atom_df['AssessmentDate'], format='%Y%m%d')
@@ -31,19 +39,6 @@ def prepare(ep_df1:pd.DataFrame) -> pd.DataFrame:
   
   # io.write_parquet(ep_df, file_path)
   return ep_df
-
-# def get_data(source_folder:Path, eps_st:str, eps_end:str) -> tuple[pd.DataFrame, str]:
-#   file_path, best_start_date, best_end_date = \
-#     io.load_for_period(source_folder
-#                           , eps_st
-#                           , eps_end
-#                           ,prefix="MDS_"
-#                           )
-#   # if best_start_date and best_end_date:
-#   #   fname = io.get_filename("MDS", best_start_date.strftime("%Y%m%d")
-#   #                       , best_end_date.strftime("%Y%m%d"), "AllPrograms")
-#     return processed_df, fname
-  
 
 
 
@@ -103,54 +98,3 @@ def import_data(eps_st:str,  eps_end:str, file_source:FileSource
 
   processed_df = prepare(raw_df)
   return processed_df, file_path
-
-
-# def import_data(eps_st:str,  eps_end:str, file_source:FileSource, prefix:str, suffix:str) -> pd.DataFrame:
-#   """
-#     Load processed episodes dataframe from disk
-#     If not available, load raw, process and save, and then return processed_df
-#     prefix: MDS
-#     suffix: AllPrograms
-#   """  
-#   processed_folder = Bootstrap.processed_dir / "MDS"
-#   source_folder =  Bootstrap.in_dir
-#   fname =  f'{prefix}_{eps_st}-{eps_end}_{suffix}' #NSW_
-#   # fname_eps =  f'{source_folder}{filename}' #NSW_MDS_1jan2020-31dec2023.csv'#TEST_NSWMDS.csv'
-  
-#   filepath = processed_folder.joinpath(f"{fname}.parquet")
-#   logging.info(f"Attempting to load data from {filepath}")
-
-#   # processed_df, fname_final = get_data(source_folder, eps_st, eps_end)
-#   file_path, best_start_date, best_end_date = io.load_for_period(processed_folder
-#                           , file_source
-#                           , eps_st
-#                           , eps_end
-#                           ,prefix="MDS_"
-#                           )
-#   processed_df = io.read_parquet_to_df(Path(file_path))
-#   if not(isinstance(processed_df, type(None)) or processed_df.empty):
-#     logging.debug(f"found & returning parquet file. {file_path}")
-#     return processed_df
-  
-#   filepath = source_folder.joinpath(f"{fname}.csv")
-#   logging.info(f"Attempting to load data from {filepath}")
-
-#   # processed_df, fname_final = get_data(source_folder, eps_st, eps_end)
-#   file_path, best_start_date, best_end_date = io.load_for_period(source_folder
-#                         , file_source                        
-#                           , eps_st
-#                           , eps_end
-#                           ,prefix="MDS_"
-#                           )  
-    
-#   raw_df = io.read_csv_to_df(Path(file_path), dtype=str)
-#   if not has_data(raw_df):
-#     logging.info(f"No Raw episode Data. Returning empty. {file_path}")
-#     return raw_df
-  
-#   raw_df.dropna(subset=['START DATE'], inplace=True)
-#   # TODO: log the dropped episodes
-#   raw_df['END DATE'] = raw_df['END DATE'].apply(lambda x: blank_to_today_str(x))
-
-#   processed_df = prepare(raw_df, eps_st, eps_end)
-#   return processed_df

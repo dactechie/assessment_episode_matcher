@@ -1,6 +1,4 @@
 import logging
-from datetime import datetime
-# from pathlib import Path
 import pandas as pd
 from assessment_episode_matcher.importers.main import FileSource, BlobFileSource
 from assessment_episode_matcher.utils import io
@@ -14,7 +12,7 @@ def import_data(start_date:str, end_date:str
                            file_source
                           , start_date
                           , end_date
-                          ,prefix=f"{prefix}"
+                          , prefix=f"{prefix}"
                           , suffix=f"{suffix}.parquet"
                           )
   if file_path:
@@ -24,7 +22,7 @@ def import_data(start_date:str, end_date:str
       logging.debug(f"found & returning parquet file. {file_path}")
       return processed_df, None
     
-  logging.error("no nada-indexed file was found")
+  logging.error(f"no nada-indexed file was found at {file_path}")
   return pd.DataFrame(), file_path
 
 

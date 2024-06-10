@@ -1,4 +1,5 @@
 import logging
+import json
 from datetime import date
 from typing import Optional
 import pandas as pd
@@ -345,6 +346,11 @@ def exclude_mismatched_dupe_assessments(slkprog_datematched:pd.DataFrame
 
     return slk_datematched_v2
 
+def _get_val_counts(slk_datematched:pd.DataFrame) -> str:
+    out = {"Before": slk_datematched['Program_x'].value_counts(),
+           "AFTER":slk_datematched['Program_y'].value_counts()
+    }   
+    return json.dumps(out, default=utdf.series_to_dict)
 
 def fix_incorrect_program( slk_datematched:pd.DataFrame) -> pd.DataFrame:
     """
@@ -352,12 +358,10 @@ def fix_incorrect_program( slk_datematched:pd.DataFrame) -> pd.DataFrame:
         use the Program from the matched episode.
     """
     # for matches based only on SLK, use the program information of the episode. log the changes
-    print(f"SLK-only based matched: ({len(slk_datematched)})")
-    print("Adding program information from matched episode. Before :"
-          , slk_datematched['Program_x'].value_counts())
-    print("Adding program information from matched episode. AFTER :"
-          , slk_datematched['Program_y'].value_counts())
-    
+    logging.info(f"SLK-only based matched: ({len(slk_datematched)}.")
+
+    logging.info(f"Adding program information from matched episode : {_get_val_counts(slk_datematched)}")
+
     slk_datematched['Program'] = slk_datematched['Program_y'] 
     
     return slk_datematched

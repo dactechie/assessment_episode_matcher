@@ -310,6 +310,11 @@ def normalize_first_element(l1: pd.DataFrame, dict_key: str):
 #     return cleaned_df
 
 
+def series_to_dict(obj):
+    if isinstance(obj, pd.Series):
+        return obj.to_dict()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
 """
   Mutually unmatched
   merge_cols = ['SLK', 'Program']

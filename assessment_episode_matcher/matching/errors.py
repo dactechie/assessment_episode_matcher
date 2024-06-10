@@ -38,7 +38,7 @@ def key_matching_errwarn_names(merge_key: str, slk_prog_onlyin: pd.DataFrame, it
 
 def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
                             ,period_start:date, period_end:date
-                            , audit_exporter:DataExporter):
+                            , audit_exporter:DataExporter) -> dict:
 
 
     slkonlyin_amst_error, slkprogonlyin_amst_warn = key_matching_errwarn_names(
@@ -85,11 +85,8 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
         [k for k in audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENT
         if k in slkonlyin_amst_error.columns
         ]
-    ]
-       
-
+    ]  
     slkprogonlyin_amst_warn = slkprogonlyin_amst_warn[audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENTPROG]
-
 
     ew2 = {
        'dates_ew':final_dates_ew,
@@ -99,10 +96,19 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
        'ep_key_warn': slkprogonlyin_ep_warn,
     }
     # write_validation_results(good_df, dates_ewdf, slk_program_keys_ewdf)
-    write_validation_results(ew2, audit_exporter)        
+    write_validation_results(ew2, audit_exporter)
 
-
-
+    return {
+       'errors' :{    
+          'dates_ew': len(final_dates_ew),
+          'asmt_key_errors': len(slkonlyin_amst_error),
+          'ep_key_errors': len(slkonlyin_ep_error),    
+       },
+       'warnings':{
+        'asmt_key_warn': len(slkprogonlyin_amst_warn),
+        'ep_key_warn': len(slkprogonlyin_ep_warn),
+       }
+    }  
 
 
 def write_validation_results(errors_warnings:dict[str, pd.DataFrame]
