@@ -1,0 +1,98 @@
+{
+  "version_date": "2024-05-28",
+  "version_number": 2.0,
+  "change_notes": "Azure Table Extract - Fields Config",
+  "get_nearest_slk": 1,
+  "drug_categories": {
+    "Alcohol": [
+      "Ethanol",
+      "Alcohols, n.e.c."
+    ],
+    "Heroin": [
+      "Heroin"
+    ],
+    "Other Opioids": [
+      "Oxycodone",
+      "Pharmaceutical Opioids",
+      "Pharmaceutical Opioids, n.f.d.",
+      "Methadone",
+      "Opioid Antagonists, nec"
+    ],
+    "Cocaine": [
+      "Cocaine"
+    ],
+    "Cannabis": [
+      "Cannabinoids and Related Drugs, n.f.d.",
+      "Cannabinoids and related drugs, n.f.d.",
+      "Cannabinoids"
+    ],
+    "Amphetamines": [
+      "Amphetamines, n.f.d.",
+      "Amphetamines, n.f.d",
+      "Methamphetamine",
+      "Dexamphetamine"
+    ],
+    "Benzodiazepines": [
+      "Benzodiazepines, nec",
+      "Benzodiazepines, n.e.c.",
+      "Benzodiazepines, n.f.d",
+      "Benzodiazepines, n.f.d.",
+      "Diazepam"
+    ],
+    "Nicotine": [
+      "Nicotine"
+    ],
+    "Gambling": [
+      "Gambling"
+    ],
+    "Another Drug1": [],
+    "Another Drug2": []
+  },
+  "table_config": {
+    "ATOM": {
+      "fields": [
+        "PartitionKey",
+        "RowKey",
+        "Program",
+        "AssessmentDate",
+        "Staff",
+        "SurveyName",
+        "SurveyData",
+        "Timestamp"
+      ],
+      "filter": "AssessmentDate ge @lower and AssessmentDate le @upper and IsActive eq 1 and Program ne 'TEST' and Status eq 'Complete'"
+    },
+    "MDS": {
+      "fields": [
+        "PartitionKey",
+        "GEOGRAPHICAL_LOCATION",
+        "RowKey",
+        "SLK",
+        "PERSON_ID",
+        "DOB",
+        "DOB_STATUS",
+        "SEX",
+        "COUNTRY_OF_BIRTH",
+        "INDIGENOUS_STATUS",
+        "PREFERRED_LANGUAGE",
+        "SOURCE_OF_INCOME",
+        "LIVING_ARRANGEMENT",
+        "USUAL_ACCOMMODATION",
+        "CLIENT_TYPE",
+        "PRINCIPAL_DRUG_OF_CONCERN",
+        "SPECIFY_DRUG_OF_CONCERN",
+        "ILLICIT_USE",
+        "METHOD_OF_USE_PRINCIPAL_DRUG",
+        "INJECTING_DRUG_USE",
+        "START_DATE",
+        "POSTCODE",
+        "SOURCE_OF_REFERRAL",
+        "MAIN_SERVICE",
+        "END_DATE",
+        "END_REASON",
+        "REFERRAL_TO_ANOTHER_SERVICE"
+      ],
+      "filter": ""
+    }
+  }
+}
