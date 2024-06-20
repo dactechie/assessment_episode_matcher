@@ -214,13 +214,15 @@ def perform_date_matches(merged_df: pd.DataFrame, match_key:str, slack_ndays:int
     
     if not utdf.has_data(duplicate_rows_dfs):
        return result_matched_df, ew_df
-    # exclude from error reporting if it is in the results:
-    duplicate_rows_dfs = duplicate_rows_dfs[~duplicate_rows_dfs.PMSEpisodeID_SLK_RowKey
-                                            .isin(result_matched_df.PMSEpisodeID_SLK_RowKey)]
-    # in the errors, show ALL the episodes the assessment matches to
-    multi_match_errors = merged_df[merged_df.SLK_RowKey.isin(duplicate_rows_dfs.SLK_RowKey)]
-    multi_match_errors = multi_match_errors.assign(issue_type=IssueType.ASMT_MATCHED_MULTI.name
+    multi_match_errors = duplicate_rows_dfs.assign(issue_type=IssueType.ASMT_MATCHED_MULTI.name
                             , issue_level=IssueLevel.ERROR.name)
+    # # exclude from error reporting if it is in the results:
+    # duplicate_rows_dfs = duplicate_rows_dfs[~duplicate_rows_dfs.PMSEpisodeID_SLK_RowKey
+    #                                         .isin(result_matched_df.PMSEpisodeID_SLK_RowKey)]
+    # # in the errors, show ALL the episodes the assessment matches to
+    # multi_match_errors = merged_df[merged_df.SLK_RowKey.isin(duplicate_rows_dfs.SLK_RowKey)]
+    # multi_match_errors = multi_match_errors.assign(issue_type=IssueType.ASMT_MATCHED_MULTI.name
+    #                         , issue_level=IssueLevel.ERROR.name)
     final_dates_ewdf = pd.concat([ew_df, multi_match_errors],ignore_index=True)
 
     # return validation_issues, good_df, ew_df
@@ -367,16 +369,17 @@ def fix_incorrect_program( slk_datematched:pd.DataFrame) -> pd.DataFrame:
     return slk_datematched
 
 
-def get_closest_slk_match (notmatched_slks:list[str]
-                           , slks:pd.Series
-                           , match_threshold=SLK_MATCH_THRESHOLD) -> pd.Series:
-  result = slks.apply(lambda x: utstr
-                      .find_closest_match(x
-                                          , notmatched_slks
-                                          , match_threshold))
-  return result
 
-   
+def get_closest_slk_match(not_matched, try_match):
+  matches = utstr.find_nearest_matches(unmatched_slks=not_matched
+                                              , database_slks=try_match
+                                              , threshold=SLK_MATCH_THRESHOLD)
+  match_dict = { unmatched: closestmatch 
+                for unmatched, closestmatch, _ in matches if closestmatch }
+  return match_dict
+
+
+
 def match_and_get_issues(e_df, a_df
                          , inperiod_atomslk_notin_ep
                          , inperiod_epslk_notin_atom
@@ -395,7 +398,7 @@ def match_and_get_issues(e_df, a_df
           e. Warning: Successfully date-matched, but - SLK+Program combination not in Assessment (only in Episodes)
     """
 
-    a_ineprogs , a_notin_eprogs = filter_asmt_by_ep_programs (e_df, a_df)
+    a_ineprogs, a_notin_eprogs = filter_asmt_by_ep_programs (e_df, a_df)
     # print(f"Assessments not in any of the programs of the episode {len(a_notin_eprogs)}")
 
     # XXA this assumes Assessment's program is always Correct 
@@ -434,15 +437,18 @@ def match_and_get_issues(e_df, a_df
     slk_onlyinass = pd.concat([slk_onlyinass, inperiod_atomslk_notin_ep])
     slk_onlyin_ep = pd.concat([slk_onlyin_ep, inperiod_epslk_notin_atom])
 
-    if config and config.get("get_nearest_slk",0) == 1:
-      slk_onlyin_ep['closest_atom_SLK'] = get_closest_slk_match(           
-              a_ineprogs.SLK.unique().tolist()
-              , slk_onlyin_ep.SLK
-              )
-      
-      slk_onlyinass['closest_episode_SLK'] = get_closest_slk_match(
-              e_df.SLK.unique().tolist()
-              , slk_onlyinass.SLK )
+    # if config and config.get("get_nearest_slk",0) == 1:
+    slk_onlyinass_uq:pd.Series = pd.Series(slk_onlyinass.SLK.unique()) 
+    slk_onlyinep_uq = slk_onlyin_ep.SLK.unique().tolist()
+ 
+    nearest_to_atom_slk_from_ep = get_closest_slk_match( 
+           slk_onlyinass_uq
+            , slk_onlyinep_uq
+            )
+    for not_matched_slk, nearest_match in nearest_to_atom_slk_from_ep.items():
+        slk_onlyinass.loc[slk_onlyinass.SLK == not_matched_slk, 'closest_episode_SLK'] = nearest_match
+
+    # no need to do the reverse directions - redundant and CCAR EP SLKs are considered the authority
 
     ew = {
         'slk_onlyinass': slk_onlyinass,

@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from pathlib import Path
 # from typing import Protocol
 # from typing import TypedDict
 from dotenv import load_dotenv
@@ -12,8 +13,8 @@ class ConfigKeys(Enum):
   AZURE_STORAGE_CONNECTION_STRING = 'AZURE_STORAGE_CONNECTION_STRING'
   AZURE_BLOB_CONNECTION_STRING ='AZURE_BLOB_CONNECTION_STRING'
   SURVEY_TABLE_NAME =  'SURVEY_TABLE_NAME'
-  MATCHING_NDAYS_SLACK = 'MATCHING_NDAYS_SLACK',
-  AZURE_BLOB_CONTAINER = 'AZURE_BLOB_CONTAINER',
+  MATCHING_NDAYS_SLACK = 'MATCHING_NDAYS_SLACK'
+  AZURE_BLOB_CONTAINER = 'AZURE_BLOB_CONTAINER'
 
 
 class ConfigManager:
@@ -30,7 +31,7 @@ class ConfigManager:
     @classmethod
     def setup(cls, root, env:str):
         cls.env = env
-        env_file = f'{root}/.env.{cls.env}'
+        env_file = Path(root) / f".env.{cls.env}"
         if  os.path.isfile(env_file):
             load_dotenv(env_file)
 

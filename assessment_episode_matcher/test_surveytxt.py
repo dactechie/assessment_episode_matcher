@@ -46,10 +46,12 @@ def load_blob_config(container_name:str):
   return config
 
 def main3():
+    # reporting_start_str, reporting_end_str =  '20220101', '20231231'
+    reporting_start_str, reporting_end_str =  '20190101', '20231231'
     # TODO:
     # envinronemnt setup : Config setup, Expected Directories create, logging setup
     bstrap = Bootstrap.setup(project_directory, env="dev")
-    container  = os.environ.get(ConfigKeys.AZURE_BLOB_CONTAINER.value)
+    container  = os.environ.get(str(ConfigKeys.AZURE_BLOB_CONTAINER.value))
     if not container:
        logging.exception(f"unable to proceed without app config {ConfigKeys.AZURE_BLOB_CONTAINER.value} ")
        return
@@ -61,7 +63,7 @@ def main3():
     # cfg = ConfigManager().config
     slack_for_matching = int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK.value, 7))
     
-    reporting_start_str, reporting_end_str =  '20220101', '20231231'
+    
 
     reporting_start, reporting_end = get_date_from_str (reporting_start_str,"%Y%m%d") \
                                       , get_date_from_str (reporting_end_str,"%Y%m%d")
@@ -151,58 +153,3 @@ def main3():
 if __name__ == "__main__":
   #  load_blob_config()
     res = main3()
-
-
-
-# def main2():
-#     # TODO:
-#     # envinronemnt setup : Config setup, Expected Directories create, logging setup
-#     bstrap = Bootstrap.setup(project_directory, env="dev")
-    
-#     cfg, logger = bstrap.config, bstrap.logger
-#     # ConfigManager.setup('dev')
-#     # cfg = ConfigManager().config
-#     slack_for_matching = int(cfg.get(ConfigKeys.MATCHING_NDAYS_SLACK, 7))
-#     refresh_assessments = False #cfg.get( ConfigKeys.REFRESH_ATOM_DATA, True )
-#     reporting_start = date(2024, 1, 1)
-#     reporting_end = date(2024, 3, 31)
-
-#     eps_st, eps_end = '20220101', '20240331'    
-#     asmt_st, asmt_end = "20160701",  "20240508"
-
-#     a_df, e_df, inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom = \
-#         match_helper.get_data_for_matching(imptr_episodes \
-#                                        , imptr_atoms \
-#                                        , eps_st, eps_end \
-#                                        , reporting_start, reporting_end \
-#                                        , assessment_start=asmt_st, assessment_end=asmt_end \
-#                                        , slack_for_matching=slack_for_matching \
-#                                        , refresh=refresh_assessments
-#                                       )
-#     if not utdf.has_data(a_df) or not utdf.has_data(e_df):
-#         print("No data to match. Ending")
-#         return None    
-#     # e_df.to_csv('data/out/active_episodes.csv')
-#     final_good, ew = match_and_get_issues(e_df, a_df
-#                                           , inperiod_atomslk_notin_ep
-#                                           , inperiod_epslk_notin_atom, slack_for_matching)
-
-#     warning_asmt_ids  = final_good.SLK_RowKey.unique()
-    
-
-#     ae = AuditExporter(config={'location' : f'{bstrap.ew_dir}'})
-#     process_errors_warnings(ew, warning_asmt_ids, dk.client_id.value
-#                             , period_start=reporting_start
-#                             , period_end=reporting_end
-#                             , audit_exporter=ae)
-  
-
-#     df_reindexed = final_good.reset_index(drop=True)
-#     df_reindexed.to_csv(f'{bstrap.out_dir}/reindexed.csv', index_label="index")
-#     return df_reindexed
-#     # nada_importfile:Path = Path("data/out") / \
-#     #                        f"{reporting_start}_{reporting_end}_surveytxt.csv"
-#     # nada = generate_nada_export(df_reindexed, outfile=nada_importfile)
-
-#     # return nada
-

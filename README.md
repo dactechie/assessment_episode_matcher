@@ -17,9 +17,14 @@ build locally with :
 make sure you have pip install twine  keyring artifacts-keyring
 > twine upload -r atom-matching-feed dist/* --verbose
 
-# to PyPI
+## to PyPI
 
 > twine upload dist/* --verbose
+
+# TESTING
+
+- First time online : `pip install -e .`
+- from the root of project folder: `pytest tests/*.py`
 
 # Versions
 

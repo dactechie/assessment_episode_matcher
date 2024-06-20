@@ -66,12 +66,25 @@ def generate_nada_save(reporting_start_str:str
   # print("Done. New file : ", nada_importfile.absolute())
 
 
-def load_blob_config(container:str):
-  config_file_source = BlobFileSource(container_name=container
-                                            , folder_path=".")
-  config = config_file_source.load_json_file(filename="configuration.json", dtype=str)
-  # print(config)
-  return config
+def load_blob_config(container: str) -> dict:
+  """
+  Load configuration from a JSON file in an Azure Blob Storage container.
+
+  Parameters:
+  container (str): The name of the Azure Blob Storage container.
+
+  Returns:
+  dict: The loaded configuration.
+
+  Raises:
+  FileNotFoundError: If the configuration file does not exist in the container.
+  """
+  try:
+    config_file_source = BlobFileSource(container_name=container, folder_path=".")
+    config = config_file_source.load_json_file(filename="configuration.json", dtype=str)
+    return config
+  except FileNotFoundError:
+    raise FileNotFoundError(f"Configuration file not found in container {container}")
 
 
 def write_aod_warnings(data:list[AODWarning]
@@ -85,7 +98,7 @@ def write_aod_warnings(data:list[AODWarning]
 
 def main ():
     # reporting_start_str, reporting_end_str =  '20231001', '20231231' # Q4 2023
-  container  = os.environ.get(ConfigKeys.AZURE_BLOB_CONTAINER.value)
+  container  = os.environ.get(str(ConfigKeys.AZURE_BLOB_CONTAINER.value))
   if not container:
       logging.exception(f"unable to proceed without app config {ConfigKeys.AZURE_BLOB_CONTAINER.value} ")
       return
