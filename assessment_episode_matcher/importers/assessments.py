@@ -65,15 +65,14 @@ def import_data(asmt_st:str, asmt_end:str
   
   else:
       logging.info("Raw file doesn't exist either. load from DB. " \
-              + "\n Hardcoding 20160701 as start date and today as end date.")
-      today = datetime.now()
-      today_str = today.strftime('%Y%m%d')
-      today_int = int(today_str)
+              + f"\n Hardcoding {asmt_st} as start date and today as {asmt_end}.")
+ 
       
-      raw_df = io.get_from_source(prefix,  20160701
-                                  , today_int, filters=filters)     
+      raw_df = io.get_from_source(prefix, int(asmt_st)
+                                  ,  int(asmt_end), filters=filters)
+      
       fname =   io.get_filename(prefix, asmt_st
-                      , today_str, suffix=suffix)
+                      , asmt_end, suffix=suffix)
 
       processed_df = io.process_assment(raw_df)
       logging.warn("Must cache {fname}  ")
