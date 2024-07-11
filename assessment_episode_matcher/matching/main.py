@@ -1,7 +1,6 @@
 import logging
 import json
 from datetime import date
-from typing import Optional
 import pandas as pd
 from assessment_episode_matcher.mytypes import DataKeys as dk, IssueLevel, IssueType, Purpose #, ValidationIssue
 # from utils.environment import MyEnvironmentConfig, ConfigKeys
@@ -10,6 +9,8 @@ from assessment_episode_matcher.utils import base as utbase
 from assessment_episode_matcher.utils import fromstr as utstr
 import assessment_episode_matcher.matching.date_checks as dtchk
 from assessment_episode_matcher.matching import increasing_slack as mis
+from assessment_episode_matcher.configs.constants import MatchingConstants
+
 # from assessment_episode_matcher.setup.bootstrap import Bootstrap
 SLK_MATCH_THRESHOLD = 0.75
 
@@ -130,13 +131,13 @@ def get_asmts_4_active_eps2(episode_df: pd.DataFrame,
     atoms_slk_not_in_ep = atoms_active_inperiod[~mask_comnslk_asminprd_epinprd]
     inperiodatom_slknot_inep = utdf.in_period(
         atoms_slk_not_in_ep, asmtdt_field, asmtdt_field, start_date, end_date)
-    print("Inperiod atoms , SLK not in episde", set(inperiodatom_slknot_inep.loc[:,'SLK']))
+    # print("Inperiod atoms , SLK not in episde", set(inperiodatom_slknot_inep.loc[:,'SLK']))
 
     commonslk_ep_mask = eps_active_inperiod.SLK.isin(atoms_active_inperiod.SLK.unique())
     ep_slk_not_in_atom = eps_active_inperiod[~commonslk_ep_mask]
     inperiodep_slk_not_inatom = utdf.in_period(
        ep_slk_not_in_atom, ep_stfield, edfield, start_date, end_date)
-    print("Inperiod episode , SLK not in ATOM: ", len(set(inperiodep_slk_not_inatom.loc[:,'SLK'])))
+    # print("Inperiod episode , SLK not in ATOM: ", len(set(inperiodep_slk_not_inatom.loc[:,'SLK'])))
 
     return atoms_active_inperiod[mask_comnslk_asminprd_epinprd], eps_active_inperiod[commonslk_ep_mask], \
         inperiodatom_slknot_inep, inperiodep_slk_not_inatom
@@ -384,7 +385,7 @@ def match_and_get_issues(e_df, a_df
                          , inperiod_atomslk_notin_ep
                          , inperiod_epslk_notin_atom
                          , slack_for_matching
-                         , config:Optional[dict]={}):
+                         , config:dict={}):
     """
       Perform Date Matching  - Assessment has to fall within Episode Start and End dates
       Steps: 
@@ -436,17 +437,17 @@ def match_and_get_issues(e_df, a_df
     print(f"\n\t only-in-ATOM: {len(inperiod_atomslk_notin_ep)}  ; only in Episode: {len(inperiod_epslk_notin_atom)} ")
     slk_onlyinass = pd.concat([slk_onlyinass, inperiod_atomslk_notin_ep])
     slk_onlyin_ep = pd.concat([slk_onlyin_ep, inperiod_epslk_notin_atom])
-
-    # if config and config.get("get_nearest_slk",0) == 1:
-    slk_onlyinass_uq:pd.Series = pd.Series(slk_onlyinass.SLK.unique()) 
-    slk_onlyinep_uq = slk_onlyin_ep.SLK.unique().tolist()
- 
-    nearest_to_atom_slk_from_ep = get_closest_slk_match( 
-           slk_onlyinass_uq
-            , slk_onlyinep_uq
-            )
-    for not_matched_slk, nearest_match in nearest_to_atom_slk_from_ep.items():
-        slk_onlyinass.loc[slk_onlyinass.SLK == not_matched_slk, 'closest_episode_SLK'] = nearest_match
+    
+    if config.get(MatchingConstants.GET_NEAREST_SLK, 0) == 1:
+      slk_onlyinass_uq:pd.Series = pd.Series(slk_onlyinass.SLK.unique()) 
+      slk_onlyinep_uq = slk_onlyin_ep.SLK.unique().tolist()
+  
+      nearest_to_atom_slk_from_ep = get_closest_slk_match( 
+            slk_onlyinass_uq
+              , slk_onlyinep_uq
+              )
+      for not_matched_slk, nearest_match in nearest_to_atom_slk_from_ep.items():
+          slk_onlyinass.loc[slk_onlyinass.SLK == not_matched_slk, 'closest_episode_SLK'] = nearest_match
 
     # no need to do the reverse directions - redundant and CCAR EP SLKs are considered the authority
 

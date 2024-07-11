@@ -12,7 +12,8 @@ COLUMNS_AUDIT_DATES = [
   ,"AssessmentDate"
   ,"EndDate"
   ,"Program"
-  ,"Staff"
+  ,"Staff_x"
+  ,"Staff_y"
   ,"SurveyName"
   ,"days_from_start"
   ,"days_from_end"
@@ -27,6 +28,7 @@ COLUMNS_AUDIT_EPKEY_CLIENT = [
   , "EndDate"
   , "SLK"
   , "Program"
+  , "Staff"
 ]
 
 COLUMNS_AUDIT_EPKEY_CLIENTPROG = [ 

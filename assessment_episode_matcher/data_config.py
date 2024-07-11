@@ -209,26 +209,6 @@ program_grouping = {
 }
 
 
-# ------------------- MDS Mapping  -----
-
-# SurveyCode	ESTABLISHMENT IDENTIFIER
-EstablishmentID_Program = {
-    '820002000': 'TSS'
-    ,'82A000004': 'ARCCOCO'
-    ,'82A000004': 'ARCRESI'
-    ,'12QQ03076': 'SAPPHIRE'
-    ,'12QQ03062': 'EUROPATH'
-    ,'12QQ03061': 'MONPATH'
-    ,'12QQ03063': 'BEGAPATH'
-    ,'13K034': 'MURMICE'
-    ,'12QQ03022': 'GOLBGNRL'
-    ,'13Q035': 'GOLBICE'
-    ,'12KK03024': 'MURMPP'
-    ,'12KK03025': 'MURMWIO'
-    ,'12KK03023': 'MURMHEAD'
-}
-
-
 # ---- for NADA Drug mapping pivot
 
 activities_w_days = {'Past4WkEngagedInOtheractivities.Paid Work': 'PaidWorkDays',

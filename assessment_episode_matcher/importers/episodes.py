@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
 from assessment_episode_matcher.configs import episodes as EpCfg
-from assessment_episode_matcher.data_config import EstablishmentID_Program
 from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils.dtypes import blank_to_today_str, convert_to_datetime
 from assessment_episode_matcher.utils.df_ops_base import has_data
@@ -19,11 +18,14 @@ def get_cols_of_interest(df_columns) -> list[str]:
   return cols
   
 
-def prepare(ep_df1:pd.DataFrame) -> pd.DataFrame:
+def prepare(ep_df1:pd.DataFrame, config) -> pd.DataFrame:
   # processed_folder = Bootstrap.get_path("processed_dir")
   cols = get_cols_of_interest(ep_df1.columns)
   ep_df = ep_df1[cols].copy()
-  ep_df['Program'] = ep_df['ESTABLISHMENT IDENTIFIER'].map(EstablishmentID_Program)
+  map_establishmentID_program = config.get("EstablishmentID_Program")
+  if not map_establishmentID_program:
+    raise Exception( " No Establishment ID - program mapping in configuration")
+  ep_df['Program'] = ep_df['ESTABLISHMENT IDENTIFIER'].map(map_establishmentID_program)
   
 #  convert_to_datetime(atom_df['AssessmentDate'], format='%Y%m%d')
   ep_df[EpCfg.date_cols[0]] = convert_to_datetime(ep_df[EpCfg.date_cols[0]],  format='%d%m%Y'
@@ -43,7 +45,7 @@ def prepare(ep_df1:pd.DataFrame) -> pd.DataFrame:
 
 
 def import_data(eps_st:str,  eps_end:str, file_source:FileSource
-                    , prefix:str, suffix:str) -> tuple  [pd.DataFrame, str|None]:
+                    , prefix:str, suffix:str, config:dict) -> tuple  [pd.DataFrame, str|None]:
                 
                  
   """
@@ -96,5 +98,5 @@ def import_data(eps_st:str,  eps_end:str, file_source:FileSource
   # TODO: log the dropped episodes
   raw_df['END DATE'] = raw_df['END DATE'].apply(lambda x: blank_to_today_str(x))
 
-  processed_df = prepare(raw_df)
+  processed_df = prepare(raw_df, config)
   return processed_df, file_path

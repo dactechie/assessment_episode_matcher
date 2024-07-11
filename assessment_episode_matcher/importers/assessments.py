@@ -44,9 +44,7 @@ def import_data(asmt_st:str, asmt_end:str
 
   filters = data_config.ATOM_DB_filters[purpose]
 
-  # fname = io.get_filename(prefix, asmt_st
-  #                      , asmt_end, suffix)
-                   
+  #1.  if raw parquet exists, process and send back (if doesnt need refresh)
   file_path, best_start_date, best_end_date = \
     io.load_for_period(
                        file_source
@@ -54,63 +52,55 @@ def import_data(asmt_st:str, asmt_end:str
                           , asmt_end
                           ,prefix=f"{prefix}_"
                            , suffix=f"{suffix}.parquet"
-                          )
-      
-  # TO DO check if recent or needs to be refreshed
+                          )      
   if file_path:
     processed_df = file_source.load_parquet_file_to_df(file_path)
     if has_data(processed_df):
-      logging.debug("found & returning processed parquet file.")
-      return processed_df ,  None
+      # if not refresh:
+      #   logging.debug("found & returning processed parquet file (no need to refresh).")
+        return processed_df,  None
+      # else -> PARTIAL OVERLAP (skip the next else section)
+
+  # else: # not hhas_data(processd_df)
+  logging.info("Raw file doesn't exist. load from DB. " \
+          + f"\n Hardcoding {asmt_st} as start date and today as {asmt_end}.")
+
+  raw_df = io.get_from_source(prefix, int(asmt_st)
+                              ,  int(asmt_end), filters=filters)
   
-  else:
-      logging.info("Raw file doesn't exist either. load from DB. " \
-              + f"\n Hardcoding {asmt_st} as start date and today as {asmt_end}.")
- 
-      
-      raw_df = io.get_from_source(prefix, int(asmt_st)
-                                  ,  int(asmt_end), filters=filters)
-      
-      fname =   io.get_filename(prefix, asmt_st
-                      , asmt_end, suffix=suffix)
+  fname =   io.get_filename(prefix, asmt_st
+                  , asmt_end, suffix=suffix)
 
-      processed_df = io.process_assment(raw_df)
-      logging.warn("Must cache {fname}  ")
-      if not refresh:
-        return processed_df, fname #, str(processed_folder.joinpath(f"{fname}.parquet"))
-      
+  processed_df = io.process_assment(raw_df)
+  logging.warn(f" To be cached {fname}  ")
+  
+  return processed_df, fname #, str(processed_folder.joinpath(f"{fname}.parquet"))
+  
 
+  # get fresh data for period , process and return with filename for caching
   #   # get the last modified date of the file
   #   # get the last modified date of ATOMs in the period of interest (assessmentDate)
   #   # if the last modified date of the file is after the last modified date of ATOMs, then return the processed_df
   #   # else query Azure data to get the latest ATOMs and merge them into the processed_df and save to disk to override
-
- # Data has been loaded in processed_df, but needs refresh. 
-  # refresh only processed file?
-  # processed_file = processed_folder.joinpath(f"{fname}.parquet")# f"{processed_folder}/{fname}" 
-  fetched_df, was_refreshed = io.get_data('ATOM'
-                    ,int(asmt_st), int(asmt_end)
-                    , processed_df
-                    # , processed_file
-                    , filters=filters                
-                    , refresh=refresh)
+  # fetched_processed_df, was_refreshed = io.get_data('ATOM'
+  #                   ,int(asmt_st), int(asmt_end)
+  #                   , processed_df
+  #                   , filters=filters                
+  #                   , refresh=refresh)
   
-  # if not has_data(atom_df):
-  #    logging.info("Returning Empty Dataframe.")
-  #    return pd.DataFrame()
-  
-  if was_refreshed:
-    today = datetime.today()
-    today_str = today.strftime("%Y%m%d")
-    fname = io.get_filename("ATOM", asmt_st
-                       , today_str, "AllPrograms")
+  # if was_refreshed:
+  #   today = datetime.today()
+  #   today_str = today.strftime("%Y%m%d")
+  #   fname = io.get_filename("ATOM", asmt_st
+  #                      , today_str, "AllPrograms")
 
-    processed_df = fetched_df
-    logging.info(f"Must Cache {fname} and returning refreshed assessment data.")
-  else:
-    logging.info("Tried to refersh , but Nothing was refreshed")
+  #   processed_df = fetched_processed_df
+  #   logging.info(f"Must Cache {fname} and returning refreshed assessment data.")
+  # else:
+  #   logging.warn("Tried to refersh , but Nothing was refreshed")
+  #   return processed_df, None # nothing to cache
 
-  return processed_df, fname #, str(processed_file)
+  # return processed_df, fname #, str(processed_file)
 
   
 # if __name__ == '__main__':

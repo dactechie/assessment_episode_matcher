@@ -15,8 +15,7 @@ class ConfigKeys(Enum):
   SURVEY_TABLE_NAME =  'SURVEY_TABLE_NAME'
   MATCHING_NDAYS_SLACK = 'MATCHING_NDAYS_SLACK'
   AZURE_BLOB_CONTAINER = 'AZURE_BLOB_CONTAINER'
-
-
+  
 class ConfigManager:
     _instance = None
     env:str

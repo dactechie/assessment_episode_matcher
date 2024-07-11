@@ -9,6 +9,8 @@ Code Stripped out from NADAFuncTools and upgraded.
 2. setup data/ in/ out/ processed/
 3. start azurite: run azurite.bat
 
+(trouble with git - see GIT_HELP.md)
+
 # Pusing out changes
 
 build locally with :
@@ -20,6 +22,8 @@ make sure you have pip install twine  keyring artifacts-keyring
 ## to PyPI
 
 > twine upload dist/* --verbose
+passcode at the bttom of : 
+    dev/PyPI-Recovery-Codes-amj-2024-05-24T03_53_05.368902.txt
 
 # TESTING
 
@@ -27,7 +31,12 @@ make sure you have pip install twine  keyring artifacts-keyring
 - from the root of project folder: `pytest tests/*.py`
 
 # Versions
-
+- 0.6.3 - Staff/Provider from MDS added.
+- 0.6.2 - NearestMatch expected via config dict
+- 0.6.1 - update requiremnts.txt for rapidfuzz library
+- 0.6.0 - simplify cache-miss logic for period-based assessment loading.
+- 0.5.9 - missing assessment cache => load only the requested (reporting) period.
+- 0.5.8 - nearest SLK match. including tests. checking in configuration.json
 - 0.5.7 - better logging (fix_incorrect_program), exceptions
 - 0.5.6 - forgot to add __init for importer config module.
 - 0.5.5 - Blob Config load, common interface, LogWarn: imported dataset doesn't have one or more columns of interest, error stats
