@@ -69,6 +69,51 @@ simple_date_formats = {
   #  'ss' : "%S",
 }
 
+def date_str_format(date_string, infmt='%Y-%m-%d', outfmt='%d%m%Y'):
+    """
+    Convert a date string from one format to another.
+
+    This function takes a date string, parses it according to the input format,
+    and then returns it formatted according to the output format.
+
+    Parameters:
+    -----------
+    date_string : str
+        The date string to be converted.
+    infmt : str, optional
+        The format of the input date string. Default is '%Y-%m-%d'.
+    outfmt : str, optional
+        The desired format for the output date string. Default is '%d%m%Y'.
+
+    Returns:
+    --------
+    str
+        The date string formatted according to outfmt.
+
+    Raises:
+    -------
+    ValueError
+        If the date_string doesn't match the infmt format.
+
+    Examples:
+    ---------
+    >>> date_str_format('2023-07-12')
+    '12072023'
+    >>> date_str_format('12/31/2022', infmt='%m/%d/%Y', outfmt='%Y-%m-%d')
+    '2022-12-31'
+
+    Notes:
+    ------
+    The format codes follow the strftime() and strptime() format codes:
+    https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+    """    
+    # Parse the input date string
+    date_object = datetime.strptime(date_string, infmt)
+    
+    # Format the date object to the desired output format
+    return date_object.strftime(outfmt)
+
+
 def date_to_str(date_obj: date|pd.Series, str_fmt='yyyymmdd') -> str|pd.Series:
     """
     Convert a single date object or a Series of dates to a formatted string or a Series of formatted strings.
@@ -81,6 +126,7 @@ def date_to_str(date_obj: date|pd.Series, str_fmt='yyyymmdd') -> str|pd.Series:
         str or pd.Series: A formatted string or a Series of formatted strings representing the input date(s).
     """
     if isinstance(date_obj, pd.Series):
+        
         dt_df = pd.to_datetime(date_obj, format='%d%m%Y', errors='coerce')
         return dt_df.dt.strftime(simple_date_formats[str_fmt])
     else:

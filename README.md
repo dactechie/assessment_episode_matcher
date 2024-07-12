@@ -30,7 +30,12 @@ passcode at the bttom of :
 - First time online : `pip install -e .`
 - from the root of project folder: `pytest tests/*.py`
 
+# IMPORTANT  TODO 12/7/2024
+Have to look at previous Episodes (for a whole year prior to start of reporting quarter) to correctly generate.
+So the query to Match/ and surveytxt/ had do this.. and finally i had to remove COMS surveys and keep only current quarter.
+
 # Versions
+- 0.6.4 - added date_str_format for final survey.txt output. Todo: Stage# Calc needs older episodes, assessments than period
 - 0.6.3 - Staff/Provider from MDS added.
 - 0.6.2 - NearestMatch expected via config dict
 - 0.6.1 - update requiremnts.txt for rapidfuzz library

@@ -1,5 +1,4 @@
 .env.*
-*.json
 *.csv
 *.parquet
 # *.txt

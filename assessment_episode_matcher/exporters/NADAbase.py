@@ -1,5 +1,5 @@
 import pandas as pd
-from assessment_episode_matcher.utils.dtypes import date_to_str
+from assessment_episode_matcher.utils.dtypes import date_str_format
 from assessment_episode_matcher.utils.df_ops_base import safe_convert_to_int_strs, prescribe_fields
 from assessment_episode_matcher.exporters.config.NADAbase import nada_final_fields, notanswered_defaults
 
@@ -42,5 +42,5 @@ def generate_finaloutput_df(df1):
   cols_fill4 = ['PDCCode', 'PMSPersonID']
   df_final[cols_fill4] = df_final[cols_fill4].astype(str).apply(lambda x: x.str.zfill(4))
 
-  df_final['AssessmentDate'] = date_to_str(df_final['AssessmentDate'],  str_fmt='ddmmyyyy')
+  df_final['AssessmentDate'] = df_final['AssessmentDate'].apply(date_str_format)
   return df_final
