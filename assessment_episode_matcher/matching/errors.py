@@ -60,10 +60,13 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
     dates_ewdf = ew['dates_ewdf']
     dates_ewdf2 = ew['dates_ewdf2']
     
-    dates_ewdf.loc[dates_ewdf.SLK_RowKey.isin(warning_asmt_ids) \
-                   , 'issue_level'] = IssueLevel.WARNING.name
-    final_dates_ew = pd.concat(
-        [dates_ewdf, dates_ewdf2]).reset_index(drop=True)
+    if "SLK_RowKey" in dates_ewdf.columns:
+        dates_ewdf.loc[dates_ewdf.SLK_RowKey.isin(warning_asmt_ids) \
+                    , 'issue_level'] = IssueLevel.WARNING.name
+        final_dates_ew = pd.concat(
+            [dates_ewdf, dates_ewdf2]).reset_index(drop=True)
+    elif "SLK_RowKey" in dates_ewdf2.columns: # not empty
+        final_dates_ew = dates_ewdf2
     
     # date mismatch errors that are outside the reporting period dnt need to be reported.
     a_dt = dk.assessment_date.value
@@ -72,7 +75,10 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
                       ,period_start, period_end)
 
     # limit columns to write out
-    final_dates_ew = final_dates_ew[audit_cfg.COLUMNS_AUDIT_DATES]
+    final_dates_ew = final_dates_ew[
+        [k for k in final_dates_ew.columns 
+         if k in audit_cfg.COLUMNS_AUDIT_DATES]
+        ]
     
     slkonlyin_ep_error = slkonlyin_ep_error[
        [k for k in audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT 

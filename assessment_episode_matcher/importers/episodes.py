@@ -55,29 +55,6 @@ def import_data(eps_st:str,  eps_end:str, file_source:FileSource
     suffix: AllPrograms
   """  
 
-  # source_folder =  Bootstrap.get_path("in_dir") / "MDS"
-  # fname =  f'{prefix}_{eps_st}-{eps_end}_{suffix}' #NSW_
-  # fname_eps =  f'{source_folder}{filename}' #NSW_MDS_1jan2020-31dec2023.csv'#TEST_NSWMDS.csv'
-  
-  # filepath = processed_folder.joinpath(f"{fname}.parquet")
-  # logging.info(f"Attempting to load data from {filepath}")
-  
-  # processed_df, fname_final = get_data(source_folder, eps_st, eps_end)
-  file_path, best_start_date, best_end_date = io.load_for_period(
-                           file_source
-                          , eps_st
-                          , eps_end
-                          ,prefix=f"{prefix}_"
-                          , suffix=f"{suffix}.parquet"
-                          )
-  if file_path:
-    processed_df = file_source.load_parquet_file_to_df(file_path)
-    # processed_df = io.read_parquet_to_df(Path(file_path))
-    if not(isinstance(processed_df, type(None)) or processed_df.empty):
-      logging.debug(f"found & returning parquet file. {file_path}")
-      return processed_df, None
-  
-
   file_path, best_start_date, best_end_date = io.load_for_period(
                          file_source 
                           , eps_st
