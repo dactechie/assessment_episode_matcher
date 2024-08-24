@@ -1,13 +1,10 @@
 import logging
-from datetime import datetime
-from pathlib import Path
+
 import pandas as pd
 from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils import io
 from assessment_episode_matcher.mytypes import Purpose
-from assessment_episode_matcher import data_config
 from assessment_episode_matcher.utils.df_ops_base import has_data
-# from assessment_episode_matcher.setup.bootstrap import Bootstrap
 
 
 def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
@@ -20,7 +17,7 @@ def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
 def import_data(asmt_st:str, asmt_end:str
                 , file_source:FileSource
                 , prefix:str, suffix:str
-                ,purpose:Purpose, refresh:bool=True
+                ,purpose:Purpose, config:dict, refresh:bool=True
                 ) -> tuple[pd.DataFrame, str|None]:
   
   """
@@ -42,8 +39,11 @@ def import_data(asmt_st:str, asmt_end:str
 
   """
 
-  filters = data_config.ATOM_DB_filters[purpose]
-
+  purpose_programs = config.get("purpose_programs") # data_config.ATOM_DB_filters[purpose]
+  if not (purpose_programs and purpose.name in purpose_programs):
+     raise KeyError(f"Missing configurtion for {purpose} programs ")
+  filters = purpose_programs.get(purpose)
+  
   #1.  if raw parquet exists, process and send back (if doesnt need refresh)
   file_path, best_start_date, best_end_date = \
     io.load_for_period(

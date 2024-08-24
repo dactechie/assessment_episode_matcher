@@ -1,8 +1,67 @@
 {
-  "version_date": "2024-05-28",
-  "version_number": 2.0,
-  "change_notes": "Azure Table Extract - Fields Config",
-  "get_nearest_slk": 1,
+  "version_date": "2024-08-24",
+  "version_number": 2.4,
+  "change_notes": "Purpose Programs for NADA matching + BEGAMH",
+  "get_nearest_slk": 0,
+  "EstablishmentID_Program": {
+    "820002000": "TSS",
+    "82A000004": "ARCRESI",
+    "12QQ03076": "SAPPHIRE",
+    "12QQ03062": "EUROPATH",
+    "12QQ03061": "MONPATH",
+    "12QQ03063": "BEGAPATH",
+    "13K034": "MURMICE",
+    "12QQ03022": "GOLBGNRL",
+    "13Q035": "GOLBICE",
+    "12KK03024": "MURMPP",
+    "12KK03025": "MURMWIO",
+    "12KK03023": "MURMHEAD",
+    "13Q730": "BEGAHUB",    
+    "13Q712": "PCSBEGA",
+    "13Q724": "PCSCOOM",
+    "13Q716": "PCSEURO",
+    "13Q719": "PCSGOLB",
+    "13K728": "PCSMURM",
+    "13K729": "PCSGRIF",        
+    "13K726": "PCSWAGA",
+    "13K727": "PRIPWAGA",
+    "13Q714": "PRIPBEGA",
+    "13Q717": "PRIPEURO",
+    "13Q713": "YCBEGA",
+    "13Q718": "YCEURO",
+    "13Q720": "YCGOLB",
+    "13Q722": "YCQBN"
+  },
+  "purpose_programs": {
+    "NADA": [
+      "SAPPHIRE",
+      "EUROPATH",
+      "MONPATH",
+      "BEGAPATH",
+      "BEGAHUB",
+      "BEGAMH",
+      "GOLBGNRL",
+      "GOLBICE",
+      "MURMHEAD",
+      "MURMICE",
+      "MURMPP",
+      "MURMWIO",
+      "PCSBEGA",
+      "PCSCOOM",
+      "PCSEURO",
+      "PCSGOLB",
+      "PCSMURM",
+      "PCSGRIF",
+      "PCSWAGA",
+      "PRIPWAGA",
+      "PRIPBEGA",
+      "PRIPEURO",
+      "YCBEGA",
+      "YCEURO",
+      "YCGOLB",
+      "YCQBN"
+    ]
+  },
   "drug_categories": {
     "Alcohol": [
       "Ethanol",
@@ -60,7 +119,7 @@
         "SurveyData",
         "Timestamp"
       ],
-      "filter": "AssessmentDate ge @lower and AssessmentDate le @upper and IsActive eq 1 and Program ne 'TEST' and Status eq 'Complete'"
+      "filter": "AssessmentDate ge @lower and AssessmentDate le @upper and IsActive eq 1 and Program ne \"TEST\" and Status eq \"Complete\""
     },
     "MDS": {
       "fields": [
@@ -90,7 +149,8 @@
         "MAIN_SERVICE",
         "END_DATE",
         "END_REASON",
-        "REFERRAL_TO_ANOTHER_SERVICE"
+        "REFERRAL_TO_ANOTHER_SERVICE",
+        "PROVIDER"
       ],
       "filter": ""
     }
