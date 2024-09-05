@@ -30,45 +30,45 @@ def get_data_for_matching2(episode_df, atom_df, start_date:date
   return a_df, e_df, inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom
 
 
-def get_data_for_matching(ep_imptr, asmt_imptr, eps_st:str, eps_end:str
-                          , reporting_start, reporting_end
-                          , assessment_start, assessment_end
-                          , slack_for_matching:int, refresh:bool=True) \
-                            -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-  """
-    1. imports Episode and ATOM data using the start and end dates passed in
-    2. Limits the assessments to only those episodes that were active during the period
-    3. Prepares a unique key for Assessments : SLK + RowKey
-    4. Returns filtered assessment and epsideo lists along with: 
-        - a. Clients Assessments for clients who are NOT in the final Episode list.
-        - b. Client Episodes for clients who are NOT in the final Assessment list.
-  """
-  # Bootstrap.config
-  episode_df = ep_imptr.import_data(eps_st, eps_end)
-  if not utdf.has_data(episode_df):
-      logging.error("No episodes")
-      return pd.DataFrame(), pd.DataFrame(),pd.DataFrame(), pd.DataFrame()
-  print("Episodes shape ", episode_df.shape)
+# def get_data_for_matching(ep_imptr, asmt_imptr, eps_st:str, eps_end:str
+#                           , reporting_start, reporting_end
+#                           , assessment_start, assessment_end
+#                           , slack_for_matching:int, refresh:bool=True) \
+#                             -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+#   """
+#     1. imports Episode and ATOM data using the start and end dates passed in
+#     2. Limits the assessments to only those episodes that were active during the period
+#     3. Prepares a unique key for Assessments : SLK + RowKey
+#     4. Returns filtered assessment and epsideo lists along with: 
+#         - a. Clients Assessments for clients who are NOT in the final Episode list.
+#         - b. Client Episodes for clients who are NOT in the final Assessment list.
+#   """
+#   # Bootstrap.config
+#   episode_df = ep_imptr.import_data(eps_st, eps_end)
+#   if not utdf.has_data(episode_df):
+#       logging.error("No episodes")
+#       return pd.DataFrame(), pd.DataFrame(),pd.DataFrame(), pd.DataFrame()
+#   print("Episodes shape ", episode_df.shape)
 
-  atom_df = asmt_imptr.import_data(assessment_start
-                                   , assessment_end
-                                   , purpose=Purpose.NADA
-                                   , refresh=refresh
-            )
-  # atom_df.to_csv('data/out/atoms.csv')
-  print("ATOMs shape ", atom_df.shape)
-  # FIX ME: multiple atoms on the same day EACAR171119722 16/1/2024
+#   atom_df = asmt_imptr.import_data(assessment_start
+#                                    , assessment_end
+#                                    , purpose=Purpose.NADA
+#                                    , refresh=refresh
+#             )
+#   # atom_df.to_csv('data/out/atoms.csv')
+#   print("ATOMs shape ", atom_df.shape)
+#   # FIX ME: multiple atoms on the same day EACAR171119722 16/1/2024
 
-  a_df, e_df,inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom  = get_asmts_4_active_eps2(
-                episode_df, atom_df, start_date=reporting_start
-              , end_date=reporting_end, slack_ndays=slack_for_matching)
+#   a_df, e_df,inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom  = get_asmts_4_active_eps2(
+#                 episode_df, atom_df, start_date=reporting_start
+#               , end_date=reporting_end, slack_ndays=slack_for_matching)
 
-  # SLK_RowKey
-  a_df, _ = utdf.merge_keys_new_field(
-      a_df, [dk.client_id.value, dk.per_client_asmt_id.value])
-  print("filtered ATOMs shape ", a_df.shape)
-  print("filtered Episodes shape ", e_df.shape)
-  return a_df, e_df, inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom
+#   # SLK_RowKey
+#   a_df, _ = utdf.merge_keys_new_field(
+#       a_df, [dk.client_id.value, dk.per_client_asmt_id.value])
+#   print("filtered ATOMs shape ", a_df.shape)
+#   print("filtered Episodes shape ", e_df.shape)
+#   return a_df, e_df, inperiod_atomslk_notin_ep, inperiod_epslk_notin_atom
 
 
 
@@ -385,6 +385,7 @@ def match_and_get_issues(e_df, a_df
                          , inperiod_atomslk_notin_ep
                          , inperiod_epslk_notin_atom
                          , slack_for_matching
+                         , reporting_start:date, reporting_end:date
                          , config:dict={}):
     """
       Perform Date Matching  - Assessment has to fall within Episode Start and End dates
@@ -450,13 +451,34 @@ def match_and_get_issues(e_df, a_df
           slk_onlyinass.loc[slk_onlyinass.SLK == not_matched_slk, 'closest_episode_SLK'] = nearest_match
 
     # no need to do the reverse directions - redundant and CCAR EP SLKs are considered the authority
-
+    
+    ##########################
+    # IMPORTANT: we're matching a broader period to get Stage right
+    # but we only need to report errors in the reporting period
+    #############
+    slk_onlyinass['AssessmentDate'] = pd.to_datetime(slk_onlyinass['AssessmentDate']).dt.date
+    slk_prog_onlyinass['AssessmentDate'] = pd.to_datetime(slk_prog_onlyinass['AssessmentDate']).dt.date
+    reporting_start = pd.to_datetime(reporting_start).date()
+    reporting_end = pd.to_datetime(reporting_end).date()
+    
+    filtered_slk_onlyinass = slk_onlyinass [
+        (slk_onlyinass['AssessmentDate'] >= reporting_start) & 
+        (slk_onlyinass['AssessmentDate'] <= reporting_end)
+    ]
+    filtered_slk_prog_onlyinass = slk_prog_onlyinass [
+        (slk_prog_onlyinass['AssessmentDate'] >= reporting_start) & 
+        (slk_prog_onlyinass['AssessmentDate'] <= reporting_end)
+    ]
+    
     ew = {
-        'slk_onlyinass': slk_onlyinass,
+        'slk_onlyinass': filtered_slk_onlyinass,
         'slk_onlyin_ep': slk_onlyin_ep,
-        'slk_prog_onlyinass': slk_prog_onlyinass,
+        'slk_prog_onlyinass': filtered_slk_prog_onlyinass,
         'slk_prog_onlyin_ep': slk_prog_onlyin_ep,
         'dates_ewdf': dates_ewdf,
         'dates_ewdf2': dates_ewdf2
     }    
     return final_good, ew
+  
+  
+  # if __name__ =='__main__':

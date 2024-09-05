@@ -63,7 +63,7 @@ def import_data(eps_st:str,  eps_end:str, file_source:FileSource
                            , suffix=f"{suffix}.csv"
                           )
   if not file_path:
-    raise FileNotFoundError(f"No MDS file {prefix}_MDS_{eps_st}-{eps_end}_{suffix} was found.")
+    raise FileNotFoundError(f"No MDS file {prefix}_{eps_st}-{eps_end}_{suffix} was found.")
   
   raw_df = file_source.load_csv_file_to_df(file_path, dtype=str)
   # raw_df = io.read_csv_to_df(Path(file_path), dtype=str)

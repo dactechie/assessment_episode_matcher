@@ -16,9 +16,7 @@ from assessment_episode_matcher.importers.aod import expand_drug_info
 
 # logger = mylogger.get(__name__)
 
-
-def get_surveydata_expanded(df: pd.DataFrame
-                            , prep_type: Purpose) -> pd.DataFrame:
+def get_surveydata_expanded(df: pd.DataFrame, prep_type: Purpose) -> pd.DataFrame:
     df_surveydata = df['SurveyData'].apply(clean_and_parse_json)
     
     # Filter out invalid or missing JSON data
@@ -30,16 +28,18 @@ def get_surveydata_expanded(df: pd.DataFrame
     if prep_type == Purpose.MATCHING:
         df_surveydata_expanded = df_surveydata_expanded[['ClientType', 'PDC']]
     
-    if keep_parent_fields: #'keep_parent_fields' in locals():
-        existing_columns_to_remove = [col for col in keep_parent_fields 
-                                      if col in df_surveydata_expanded.columns]
-        if existing_columns_to_remove:
-            df_surveydata_expanded = drop_fields(df_surveydata_expanded
-                                                 , keep_parent_fields)
+    # Ensure df_surveydata_expanded has the same index as valid_surveydata
+    df_surveydata_expanded.index = valid_surveydata[valid_surveydata].index
     
-    df_final = concat_drop_parent(df.loc[valid_surveydata.index]
-                                  , df_surveydata_expanded
-                                  , drop_parent_name='SurveyData')
+    # if 'keep_parent_fields' in locals():
+    existing_columns_to_remove = [col for col in keep_parent_fields 
+                                  if col in df_surveydata_expanded.columns]
+    if existing_columns_to_remove:
+        df_surveydata_expanded = drop_fields(df_surveydata_expanded, keep_parent_fields)
+    
+    df_final = concat_drop_parent(df[valid_surveydata],
+                                  df_surveydata_expanded,
+                                  drop_parent_name='SurveyData')
     
     return df_final
 
@@ -66,16 +66,9 @@ def convert_true_falsefields(df1, field_names):
   return transform_multiple(df1, field_names,to_num_bool_none)
 
 
-# def prep_dataframe_matching(df:pd.DataFrame):
-
-#   logging.debug(f"prep_dataframe of length {len(df)} : ")
-#   df2 = get_surveydata_expanded(df.copy(),  Purpose.MATCHING)
-
-#   df5, warnings_aod = expand_drug_info(df2)
-#   return df5, warnings_aod
 
 
-def prep_dataframe_nada(df:pd.DataFrame, config:dict):
+def prep_nada_fields(df:pd.DataFrame, config:dict):
 
   logging.debug(f"prep_dataframe of length {len(df)} : ")
   df2 = get_surveydata_expanded(df.copy(), Purpose.NADA)
@@ -103,42 +96,3 @@ def prep_dataframe_nada(df:pd.DataFrame, config:dict):
   logging.debug(f"Done Prepping for NADA. \n\t" +
                 "  Dataset shape:{df9.shape}). Warnings shape {warnings_aod}")
   return df9 , warnings_aod
-
-
-# def prep_dataframe(df:pd.DataFrame, prep_type: Literal['ATOM', 'NADA', 'Matching'] = 'ATOM'):
-#    # because Program is in SurveyData
-  
-#   if prep_type == 'Matching':
-#     return prep_dataframe_matching(df)
-
-#   logger.debug(f"prep_dataframe of length {len(df)} : ")
-#   df2 = get_surveydata_expanded(df.copy())
-
-#   df3 = drop_fields(df2,['ODC'])
-#   df4 = drop_cols_contains_regex(df3, ATOM_DROP_COLCONTAINS_REGEX) # remove *Goals notes, so do before PDC step (PDCGoals dropdown)
-#   df5 = normalize_first_element(df4,'PDC') #TODO: (df,'ODC') # only takes the first ODC   
-
- 
-#   df6 = df5[df5.PDCSubstanceOrGambling.notna()]# removes rows without PDC
-
-#   # df6.loc[:,'Program'] = df6['RowKey'].str.split('_').str[0] # has to be made into category
-#   df7 = convert_dtypes(df6)
-
-#   # df.PDCAgeFirstUsed[(df.PDCAgeFirstUsed.notna()) & (df.PDCAgeFirstUsed != '')].astype(int)
-#  # "Expected bytes, got a 'int' object", 'Conversion failed for column PDCAgeFirstUsed with type object'
-#   df8 = drop_fields(df7, ['PDCAgeFirstUsed',\
-#                            'PrimaryCaregiver','Past4WkAodRisks']) 
-#   # 'cannot mix list and non-list, non-null values', 
-#   # 'Conversion failed for column PrimaryCaregiver, Past4WkAodRisks with type object')
-
-#   if 'SLK' in df8.columns:
-#     df8.drop(columns=['SLK'], inplace=True) 
-  
-#   df8.rename(columns={'PartitionKey': 'SLK'}, inplace=True)
-  
-#   df9 = df8.sort_values(by="AssessmentDate")
- 
-#   df9['PDC'] = df9['PDCSubstanceOrGambling']
- 
-#   logger.debug(f"Done Prepping df")
-#   return df9

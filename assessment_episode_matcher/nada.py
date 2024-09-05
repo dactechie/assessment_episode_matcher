@@ -3,6 +3,8 @@ import logging
 import pandas as pd
 
 from assessment_episode_matcher import project_directory
+from assessment_episode_matcher.configs import load_blob_config
+
 from assessment_episode_matcher.setup.bootstrap import Bootstrap
 from assessment_episode_matcher.utils.environment import ConfigKeys
 from assessment_episode_matcher.exporters.main import AzureBlobExporter
@@ -64,27 +66,6 @@ def generate_nada_save(reporting_start_str:str
   logging.info(msg)
   return warnings_aod
   # print("Done. New file : ", nada_importfile.absolute())
-
-
-def load_blob_config(container: str) -> dict:
-  """
-  Load configuration from a JSON file in an Azure Blob Storage container.
-
-  Parameters:
-  container (str): The name of the Azure Blob Storage container.
-
-  Returns:
-  dict: The loaded configuration.
-
-  Raises:
-  FileNotFoundError: If the configuration file does not exist in the container.
-  """
-  try:
-    config_file_source = BlobFileSource(container_name=container, folder_path=".")
-    config = config_file_source.load_json_file(filename="configuration.json", dtype=str)
-    return config
-  except FileNotFoundError:
-    raise FileNotFoundError(f"Configuration file not found in container {container}")
 
 
 def write_aod_warnings(data:list[AODWarning]

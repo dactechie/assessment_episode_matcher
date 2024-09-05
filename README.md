@@ -35,6 +35,9 @@ Have to look at previous Episodes (for a whole year prior to start of reporting 
 So the query to Match/ and surveytxt/ had do this.. and finally i had to remove COMS surveys and keep only current quarter.
 
 # Versions
+- 0.6.7 - discover right dataset (ep period) matching, bugfix sdata expand, only errors for inperiod, code export tools(for AI support)
+- 0.6.6 - move NADA programs config from local .py to configuration.json (blob)
+- 0.6.5 - eps no parquet, handle aggrgate when missing error type
 - 0.6.4 - added date_str_format for final survey.txt output. Todo: Stage# Calc needs older episodes, assessments than period
 - 0.6.3 - Staff/Provider from MDS added.
 - 0.6.2 - NearestMatch expected via config dict

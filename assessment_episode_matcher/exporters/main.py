@@ -26,14 +26,14 @@ class CSVExporter(DataExporter):
     data.to_csv(f"{path}{data_name}.csv", index=False)
 
 
-class ParquetExporter(DataExporter):
+# class ParquetExporter(DataExporter):
 
-  def export_dataframe(self, data_name:str, data:pd.DataFrame):
-    path = self.config.get("location")
-    if not path:
-      raise FileNotFoundError("ParquetExporter:No file-path was passed in")
+#   def export_dataframe(self, data_name:str, data:pd.DataFrame):
+#     path = self.config.get("location")
+#     if not path:
+#       raise FileNotFoundError("ParquetExporter:No file-path was passed in")
     
-    data.to_parquet(f"{path}{data_name}.parquet", index=False)
+#     data.to_parquet(f"{path}{data_name}.parquet", index=False)
 
 
 class LocalFileExporter(DataExporter):
@@ -45,11 +45,7 @@ class LocalFileExporter(DataExporter):
   similar to azutil.az_blob_query.write_data()
   """
   def export_dataframe(self, data_name:str, data:pd.DataFrame):
-    if data_name[-3:] =='csv':
-      p = CSVExporter(self.config)    
-    else:
-      p = ParquetExporter(self.config)
-    
+    p = CSVExporter(self.config)
     p.export_dataframe(data_name, data)
     
 

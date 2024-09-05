@@ -42,7 +42,7 @@ def import_data(asmt_st:str, asmt_end:str
   purpose_programs = config.get("purpose_programs") # data_config.ATOM_DB_filters[purpose]
   if not (purpose_programs and purpose.name in purpose_programs):
      raise KeyError(f"Missing configurtion for {purpose} programs ")
-  filters = purpose_programs.get(purpose)
+  filters = { 'Program' : list(purpose_programs.get(purpose.name)) } 
   
   #1.  if raw parquet exists, process and send back (if doesnt need refresh)
   file_path, best_start_date, best_end_date = \

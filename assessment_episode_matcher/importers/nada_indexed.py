@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from assessment_episode_matcher.importers.main import FileSource, BlobFileSource
+from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils import io
 
 #NADA

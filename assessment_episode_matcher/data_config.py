@@ -1,21 +1,10 @@
 from pandas.api.types import CategoricalDtype
-from assessment_episode_matcher.mytypes import Purpose
-
 
 keep_parent_fields = ['Program', 'Staff', 'AssessmentDate', 'SLK'] # if also in SurveyData 
 # {
 #   'Matching':['Program', 'Staff']
 # }
 
-ATOM_DB_filters = {
-  # extract purpose
-   Purpose.NADA : {
-    'Program' : ('SAPPHIRE','EUROPATH','MONPATH','BEGAPATH'
-                 ,'MURMICE','GOLBGNRL','GOLBICE','MURMPP','MURMWIO','MURMHEAD',) 
-   },
-   Purpose.MATCHING:{}
-   
-  }
 # range
 # remove_if_under_threshold = {
 #      'PDCHowMuchPerOccasion' : {

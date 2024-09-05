@@ -38,12 +38,6 @@ from assessment_episode_matcher.mytypes import DataKeys as dk, Purpose
         
 #     return st
 
-def load_blob_config(container_name:str):
-  config_file_source = BlobFileSource(container_name=container_name
-                                            , folder_path=".")
-  config = config_file_source.load_json_file(filename="configuration.json", dtype=str)
-  # print(config)
-  return config
 
 def main3():
     # reporting_start_str, reporting_end_str =  '20220101', '20231231'
@@ -112,7 +106,7 @@ def main3():
         print("No data to match. Ending")
         return None    
    
-    config = {} #load_blob_config()
+    config = {}
     final_good, ew = match_helper.match_and_get_issues(e_df, a_df
                                           , inperiod_atomslk_notin_ep
                                           , inperiod_epslk_notin_atom
@@ -151,5 +145,4 @@ def main3():
        
 
 if __name__ == "__main__":
-  #  load_blob_config()
     res = main3()

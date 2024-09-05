@@ -33,7 +33,7 @@ def cols_prep(source_df, dest_columns, fill_new_cols) -> pd.DataFrame:
 def generate_finaloutput_df(df1):
 
   df = df1.copy()
-  df["Stage"] = get_stage_per_episode(df)
+  # df["Stage"] = get_stage_per_episode(df)
 
   df_final = prescribe_fields(df, nada_final_fields)
   df_final = cols_prep(df, nada_final_fields, fill_new_cols="")
