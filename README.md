@@ -6,7 +6,7 @@ The Assessment-Episodes Matcher is a Python package designed for alcohol and dru
 1. Matching assessment data (ATOM) with episode data (MDS)
 2. Generating NADA (Network of Alcohol and other Drugs Agencies) compliant survey text files (survey.txt)
 
-This package is primarily used by Azure Functions to process and report treatment data.
+This package is primarily used by Azure Functions to process and report treatment data. *Refer to the [NADA AzFunc](https://github.com/dactechie/NADATools_AzFunc) project's homepage/README for a code flow diagram.*
 
 ## Features
 
@@ -19,7 +19,7 @@ This package is primarily used by Azure Functions to process and report treatmen
 - Integration with Azure Functions for serverless operation
 
 
-**Note**:  see [README_dev.md](https://github.com/dactechie/NADATools_AzFunc/blob/main/README_dev.md) for version details.
+**Note**:  see [README_dev.md](https://github.com/dactechie/assessment_episode_matcher/blob/main/README_dev.md) for version details.
 
 
 ## Installation
@@ -71,6 +71,7 @@ The package uses a configuration file for various settings. Create a `configurat
   }
 }
 ```
+* The `PROGRAM1`, `PROGRAM2` are the program codes used in assessment records. For instance by the [ATOM tool](https://github.com/dactechie/ansa-surveyjs).
 
 ## Usage with Azure Functions
 
@@ -127,4 +128,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Aftab MJ - amj@eml.cc
 
-Project Link: [https://github.com/yourusername/assessment-episodes-matcher](https://github.com/yourusername/assessment-episodes-matcher)
+Project Link: [https://github.com/dactechie/assessment-episodes-matcher](https://github.com/dactechie/assessment-episodes-matcher)
