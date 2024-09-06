@@ -1,58 +1,130 @@
+# Assessment-Episodes Matcher
 
-# README
+## Overview
 
-Code Stripped out from NADAFuncTools and upgraded.
+The Assessment-Episodes Matcher is a Python package designed for alcohol and drug treatment services data processing. It performs two main functions:
+1. Matching assessment data (ATOM) with episode data (MDS)
+2. Generating NADA (Network of Alcohol and other Drugs Agencies) compliant survey text files (survey.txt)
 
-## Development (windows)
+This package is primarily used by Azure Functions to process and report treatment data.
 
-1. set up dev environment and install deps from requirements.txt
-2. setup data/ in/ out/ processed/
-3. start azurite: run azurite.bat
+## Features
 
-(trouble with git - see GIT_HELP.md)
+- Match assessments to episodes based on SLK, Program, and date ranges
+- Process and transform data from various sources (Azure Table Storage, Blob Storage)
+- Generate NADA-compliant survey text files (survey.txt)
+- Handle complex matching scenarios with configurable slack periods
+- Comprehensive error handling and audit logging
+- Flexible configuration management
+- Integration with Azure Functions for serverless operation
 
-# Pusing out changes
 
-build locally with :
-> python clean.py
-> python -m build
-make sure you have pip install twine  keyring artifacts-keyring
-> twine upload -r atom-matching-feed dist/* --verbose
+**Note**:  see [README_dev.md](https://github.com/dactechie/NADATools_AzFunc/blob/main/README_dev.md) for version details.
 
-## to PyPI
 
-> twine upload dist/* --verbose
-passcode at the bttom of : 
-    dev/PyPI-Recovery-Codes-amj-2024-05-24T03_53_05.368902.txt
+## Installation
 
-# TESTING
+To install the package, run:
 
-- First time online : `pip install -e .`
-- from the root of project folder: `pytest tests/*.py`
+```bash
+pip install assessment-episodes-matcher
+```
 
-# IMPORTANT  TODO 12/7/2024
-Have to look at previous Episodes (for a whole year prior to start of reporting quarter) to correctly generate.
-So the query to Match/ and surveytxt/ had do this.. and finally i had to remove COMS surveys and keep only current quarter.
+## Quick Start
 
-# Versions
-- 0.6.7 - discover right dataset (ep period) matching, bugfix sdata expand, only errors for inperiod, code export tools(for AI support)
-- 0.6.6 - move NADA programs config from local .py to configuration.json (blob)
-- 0.6.5 - eps no parquet, handle aggrgate when missing error type
-- 0.6.4 - added date_str_format for final survey.txt output. Todo: Stage# Calc needs older episodes, assessments than period
-- 0.6.3 - Staff/Provider from MDS added.
-- 0.6.2 - NearestMatch expected via config dict
-- 0.6.1 - update requiremnts.txt for rapidfuzz library
-- 0.6.0 - simplify cache-miss logic for period-based assessment loading.
-- 0.5.9 - missing assessment cache => load only the requested (reporting) period.
-- 0.5.8 - nearest SLK match. including tests. checking in configuration.json
-- 0.5.7 - better logging (fix_incorrect_program), exceptions
-- 0.5.6 - forgot to add __init for importer config module.
-- 0.5.5 - Blob Config load, common interface, LogWarn: imported dataset doesn't have one or more columns of interest, error stats
-- 0.5.4 - code path - no config - errors columns
-- 0.5.3 - Load Blob Config for drug Mapping, etc
-- 0.5.2 - Fixed Destination Paths (on blob storage)
-- 0.5.1 - AOD warnings, rename reindexed file to match format prefix_date-range_suffix: prefix:forstxt_
-- 0.5.0 - write redindexed to csv (instead of parq).
-         - Survey.txt write to blob storage.
-- 0.4.0 - remove all local writes and reads, refactor, fix errors_warning writes
-- 0.3.1 - removing disk writes as read-only on cloud fs
+```python
+from assessment_episode_matcher.matching import main as match_helper
+from assessment_episode_matcher.nada import generate_nada_save
+
+# Match assessments to episodes
+final_good, ew = match_helper.match_and_get_issues(e_df, a_df, 
+                                                   inperiod_atomslk_notin_ep,
+                                                   inperiod_epslk_notin_atom,
+                                                   slack_for_matching,
+                                                   config)
+
+# Generate NADA export
+nada_records, warnings_aod = generate_nada_save(reporting_start_str, 
+                                                reporting_end_str,
+                                                container_name,
+                                                config)
+```
+
+## Configuration
+
+The package uses a configuration file for various settings. Create a `configuration.json` file in your Azure Blob container:
+
+```json
+{
+  "MATCHING_NDAYS_SLACK": 7,
+  "AZURE_BLOB_CONTAINER": "your-container-name",
+  "EstablishmentID_Program": {
+    "12A002": "PROGRAM1",
+    "12A003": "PROGRAM2"
+  },
+  "purpose_programs": {
+    "NADA": ["PROGRAM1", "PROGRAM2"]
+  },
+  "drug_categories": {
+    "Alcohol": ["Alcohol"],
+    "Cannabis": ["Cannabis"]
+  }
+}
+```
+
+## Usage with Azure Functions
+
+The package is primarily used by Azure Functions. Here's an example of how it's utilized (snippet from [NADA_AZFunc](https://github.com/dactechie/NADATools_AzFunc) ):
+
+```python
+import assessment_episode_matcher.matching_helper as ATOMEpisodeMatcher
+import assessment_episode_matcher.nada_helper as NADAImportFileGenerator
+
+def perform_mds_atom_matches(req: func.HttpRequest) -> func.HttpResponse:
+    start_dt = req.params.get('start_date', "")
+    end_dt = req.params.get('end_date', "")
+    
+    result = ATOMEpisodeMatcher.run(start_yyyymmd=start_dt,
+                                    end_yyyymmd=end_dt)
+    
+    return func.HttpResponse(body=json.dumps(result),
+                             mimetype="application/json",
+                             status_code=200)
+
+def generate_surveytxt(req: func.HttpRequest) -> func.HttpResponse:
+    start_dt = req.params.get('start_date', "")
+    end_dt = req.params.get('end_date', "")
+    
+    result = NADAImportFileGenerator.run(start_yyyymmd=start_dt,
+                                         end_yyyymmd=end_dt)
+    
+    return func.HttpResponse(body=json.dumps(result),
+                             mimetype="application/json",
+                             status_code=200)
+```
+
+## Testing
+
+Run the test suite:
+
+```bash
+pytest tests/
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Contact
+
+Aftab MJ - amj@eml.cc
+
+Project Link: [https://github.com/yourusername/assessment-episodes-matcher](https://github.com/yourusername/assessment-episodes-matcher)
