@@ -33,6 +33,7 @@ passcode at the bttom of :
 
 
 # Versions
+- 0.6.8 - Program consistency check between asmts and eps was too limiting - not required as all within legit NADA programs.
 - 0.6.7 - discover right dataset (ep period) matching, bugfix sdata expand, only errors for inperiod, code export tools(for AI support)
 - 0.6.6 - move NADA programs config from local .py to configuration.json (blob)
 - 0.6.5 - eps no parquet, handle aggrgate when missing error type

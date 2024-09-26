@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // {
+    //   "name": "Python Debugger: Current File",
+    //   "type": "debugpy",
+    //   "request": "launch",
+    //   "program": "${file}",
+    //   "console": "integratedTerminal"
+    // },
+    {
+      "name": "Python Debugger: Full",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "assessment_episode_matcher.test_surveytxt"
+      // "module": "assessment_episode_matcher.importers.nada_eps_export"
+    },
+    // {
+    //   "name": "Python Debugger: Pytest",
+    //   "type": "debugpy",
+    //   "request": "launch",
+    //   "module": "pytest",
+    //   "args": [
+    //     "${workspaceFolder}/tests"
+    //   ],
+    //   "console": "integratedTerminal"
+    // }
+  ]
+}

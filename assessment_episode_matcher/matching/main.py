@@ -343,8 +343,8 @@ def exclude_mismatched_dupe_assessments(slkprog_datematched:pd.DataFrame
     slk_datematched_v2 = utdf.filter_out_common(slk_datematched, slkprog_datematched, key='Ep_AsDate')
     
     # good_df2_v2 =  good_df2[~good_df2.Ep_AsDate.isin(good_df.Ep_AsDate)]
-    print("fix_incorrect_program: moving rows from slk_datematched becauase they exist in slkprog_datematched: \n" \
-          , slk_datematched[~slk_datematched.Ep_AsDate.isin(slk_datematched_v2.Ep_AsDate)])
+    logging.info("fix_incorrect_program: moving rows from slk_datematched becauase they exist in slkprog_datematched: \n")# \
+          # , slk_datematched[~slk_datematched.Ep_AsDate.isin(slk_datematched_v2.Ep_AsDate)])
     slk_datematched_v2 = utdf.drop_fields(slk_datematched_v2, ['Ep_AsDate'])
 
     return slk_datematched_v2
@@ -399,20 +399,16 @@ def match_and_get_issues(e_df, a_df
           d. Warning: Successfully date-matched, but - SLK+Program combination not in Episodes (only in Assessment)
           e. Warning: Successfully date-matched, but - SLK+Program combination not in Assessment (only in Episodes)
     """
-
-    a_ineprogs, a_notin_eprogs = filter_asmt_by_ep_programs (e_df, a_df)
-    # print(f"Assessments not in any of the programs of the episode {len(a_notin_eprogs)}")
-
     # XXA this assumes Assessment's program is always Correct 
     slkprog_datematched, dates_ewdf \
     , slk_prog_onlyinass, slk_prog_onlyin_ep  = do_matches_slkprog(
-                                                          a_ineprogs 
+                                                          a_df 
                                                           , e_df
                                                           , slack_for_matching
                                                         )
     a_key = dk.assessment_id.value # SLK +RowKey
     # ATOMs that could not be date matched with episode, when merging on SLK+Program
-    unmatched_asmt_by_slkprog, _ = utdf.get_delta_by_key(a_ineprogs
+    unmatched_asmt_by_slkprog, _ = utdf.get_delta_by_key(a_df
                                                          , slkprog_datematched
                                                          , key=a_key)
     # unmatched_asmt_by_slkprog = utdf.filter_out_common(a_ineprogs, slkprog_datematched, a_key)
@@ -430,7 +426,7 @@ def match_and_get_issues(e_df, a_df
     final_good = pd.concat([slkprog_datematched, slkonly_datematched_v2])
 
     # can't use the result above (_)as we are only using the un-merged assesemtns (slk_prog_onlyinass) as input
-    slk_onlyin_ep, _ = utdf.get_delta_by_key(e_df, a_ineprogs, key='SLK')
+    slk_onlyin_ep, _ = utdf.get_delta_by_key(e_df, a_df, key='SLK')
     # slk_onlyin_ep = utdf.filter_out_common(e_df, a_ineprogs, key='SLK')
 
     # TODO: explain why these are two different things (pre date-matching vs post date-matching errors)
