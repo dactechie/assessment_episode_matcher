@@ -17,6 +17,7 @@ build locally with :
 > python clean.py
 > python -m build
 make sure you have pip install twine  keyring artifacts-keyring
+may need to use python -m for this :
 > twine upload -r atom-matching-feed dist/* --verbose
 
 ## to PyPI
@@ -33,6 +34,7 @@ passcode at the bttom of :
 
 
 # Versions
+- 0.6.9 - filter our ClinicalAssessments as it does not have anything Outcome Measures related.
 - 0.6.8 - Program consistency check between asmts and eps was too limiting - not required as all within legit NADA programs.
 - 0.6.7 - discover right dataset (ep period) matching, bugfix sdata expand, only errors for inperiod, code export tools(for AI support)
 - 0.6.6 - move NADA programs config from local .py to configuration.json (blob)
