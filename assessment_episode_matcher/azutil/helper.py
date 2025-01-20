@@ -53,6 +53,14 @@ def get_results(table:str, start_date:int, end_date:int, filters:dict|None={}) -
 
     fields:list = tconfig['fields']
     all_filters = tconfig['filter']
+
+    if "AssessmentType" not in fields:
+        fields.append(u"AssessmentType")
+        
+    all_filters = tconfig['filter']
+    # Add AssessmentType filter
+    all_filters = f"{all_filters} and AssessmentType ne 'ClinicalAssessment'"
+    
     if filters:
       if 'Timestamp' in filters:        
         all_filters = f"{all_filters} and Timestamp gt datetime'{filters['Timestamp']}'"
