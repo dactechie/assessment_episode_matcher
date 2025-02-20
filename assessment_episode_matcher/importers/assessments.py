@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import pandas as pd
 from assessment_episode_matcher.importers.main import FileSource
@@ -17,7 +18,9 @@ def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
 def import_data(asmt_st:str, asmt_end:str
                 , file_source:FileSource
                 , prefix:str, suffix:str
-                ,purpose:Purpose, config:dict, refresh:bool=True
+                ,purpose:Purpose, config:dict
+                , only_for_slks:Optional[list[str]]
+                , refresh:bool=True
                 ) -> tuple[pd.DataFrame, str|None]:
   
   """
@@ -42,7 +45,12 @@ def import_data(asmt_st:str, asmt_end:str
   purpose_programs = config.get("purpose_programs") # data_config.ATOM_DB_filters[purpose]
   if not (purpose_programs and purpose.name in purpose_programs):
      raise KeyError(f"Missing configurtion for {purpose} programs ")
-  filters = { 'Program' : list(purpose_programs.get(purpose.name)) } 
+  filters = { "lists":{
+                  'Program' : list(purpose_programs.get(purpose.name)) 
+                 }
+            }
+  if only_for_slks:
+    filters['lists']['PartitionKey'] = only_for_slks
   
   #1.  if raw parquet exists, process and send back (if doesnt need refresh)
   file_path, best_start_date, best_end_date = \

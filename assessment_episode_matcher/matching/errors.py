@@ -22,15 +22,24 @@ def key_matching_errwarn_names(merge_key: str, slk_prog_onlyin: pd.DataFrame, it
                         slk_onlyin: pd.DataFrame,  it2: IssueType):
     # slk_prog_onlyin (SLK+Program) doesn't need to have anytihng that is also in slk_onlyin (SLK)
     # redundant
-    slk_prog_onlyin1, _ = utdf.get_delta_by_key(
-        slk_prog_onlyin, slk_onlyin, key=merge_key)
-    # mask_common = slk_prog_onlyin[matchkey2].isin(slk_onlyin[matchkey2])
-    slk_prog_warn = slk_prog_onlyin1.assign(
-        issue_type=it1.name,
-        issue_level=IssueLevel.WARNING.name)
+    if not slk_prog_onlyin.empty:
+      if not slk_onlyin.empty:
+        slk_prog_onlyin1, _ = utdf.get_delta_by_key(
+            slk_prog_onlyin, slk_onlyin, key=merge_key)
+      else:
+         slk_prog_onlyin1 = slk_prog_onlyin
+      # mask_common = slk_prog_onlyin[matchkey2].isin(slk_onlyin[matchkey2])
+      slk_prog_warn = slk_prog_onlyin1.assign(
+          issue_type=it1.name,
+          issue_level=IssueLevel.WARNING.name)
+    else:
+       slk_prog_warn = pd.DataFrame()
 
-    slk_onlyin_error = slk_onlyin.assign(issue_type=it2.name,
+    if not slk_onlyin.empty:
+      slk_onlyin_error = slk_onlyin.assign(issue_type=it2.name,
                                          issue_level=IssueLevel.ERROR.name)
+    else:
+       slk_onlyin_error = pd.DataFrame()
     # only_in_errors = pd.concat([slk_prog_new, slk_onlyin_new])
 
     return slk_onlyin_error, slk_prog_warn
@@ -67,32 +76,41 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
             [dates_ewdf, dates_ewdf2]).reset_index(drop=True)
     elif "SLK_RowKey" in dates_ewdf2.columns: # not empty
         final_dates_ew = dates_ewdf2
+    else:
+       final_dates_ew = pd.DataFrame()
     
     # date mismatch errors that are outside the reporting period dnt need to be reported.
-    a_dt = dk.assessment_date.value
-    final_dates_ew = utdf.in_period(final_dates_ew
-                      ,a_dt,a_dt
-                      ,period_start, period_end)
+    if not final_dates_ew.empty:
+      a_dt = dk.assessment_date.value
+      final_dates_ew = utdf.in_period(final_dates_ew
+                        ,a_dt,a_dt
+                        ,period_start, period_end)
 
-    # limit columns to write out
-    final_dates_ew = final_dates_ew[
-        [k for k in final_dates_ew.columns 
-         if k in audit_cfg.COLUMNS_AUDIT_DATES]
-        ]
-    
+      # limit columns to write out
+      final_dates_ew = final_dates_ew[
+          [k for k in final_dates_ew.columns 
+          if k in audit_cfg.COLUMNS_AUDIT_DATES]
+          ]
+        
     slkonlyin_ep_error = slkonlyin_ep_error[
        [k for k in audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT 
         if k in slkonlyin_ep_error.columns]
         ]
     slkprogonlyin_ep_warn = slkprogonlyin_ep_warn[
-       audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENTPROG
+      [k for k in  audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENTPROG
+        if k in slkprogonlyin_ep_warn.columns
+      ]
         ]
     slkonlyin_amst_error = slkonlyin_amst_error[
         [k for k in audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENT
         if k in slkonlyin_amst_error.columns
         ]
     ]  
-    slkprogonlyin_amst_warn = slkprogonlyin_amst_warn[audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENTPROG]
+    slkprogonlyin_amst_warn = slkprogonlyin_amst_warn[
+        [k for k in audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENTPROG
+        if k in slkprogonlyin_amst_warn.columns
+        ]       
+       ]
 
     ew2 = {
        'dates_ew':final_dates_ew,

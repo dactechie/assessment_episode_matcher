@@ -38,6 +38,20 @@ table_config = {
   }
 }
 
+"""
+  exmaple
+        prog_filter_list = [f"Program eq '{f}'" for f in filters['Program']]
+        progs_filter_str = f'({  " or ".join(prog_filter_list)  })'
+"""
+def get_filter_list_clause(key_name:str, filter_items:list[str]) -> str:
+  """
+  key_name
+  filter_items -> filters['Program']
+  """
+  prog_filter_list = [f"{key_name} eq '{f}'" for f in filter_items]
+  progs_filter_str = f'({  " or ".join(prog_filter_list)  })'
+  return progs_filter_str
+
 def get_results(table:str, start_date:int, end_date:int, filters:dict|None={}) -> list[dict]:
     
     stq = SampleTablesQuery(table)    
@@ -69,11 +83,10 @@ def get_results(table:str, start_date:int, end_date:int, filters:dict|None={}) -
         fields.append(u"IsActive")
 
         #  and IsActive eq 1
-      if 'Program' in filters:
-        prog_filter_list = [f"Program eq '{f}'" for f in filters['Program']]
-        progs_filter_str = f'({  " or ".join(prog_filter_list)  })'
-            #  (Program eq 'MURMICE' or Program eq 'EUROPATH' or Program eq 'BEGAPATH')
-        all_filters = f"{all_filters} and {progs_filter_str}"
+      if 'lists' in filters:
+        for k, v in filters['lists'].items():
+          progs_filter_str = get_filter_list_clause(key_name=k, filter_items=v)
+          all_filters = f"{all_filters} and {progs_filter_str}"
 
     results = [
          dict(json_data)

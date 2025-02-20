@@ -2,7 +2,7 @@ import logging
 import json
 from datetime import date
 import pandas as pd
-from assessment_episode_matcher.mytypes import DataKeys as dk, IssueLevel, IssueType, Purpose #, ValidationIssue
+from assessment_episode_matcher.mytypes import DataKeys as dk, IssueLevel, IssueType
 # from utils.environment import MyEnvironmentConfig, ConfigKeys
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.utils import base as utbase
@@ -380,7 +380,19 @@ def get_closest_slk_match(not_matched, try_match):
   return match_dict
 
 
-
+def filter_by_date (df:pd.DataFrame, reporting_start, reporting_end) -> pd.DataFrame:
+  
+  if df.empty:
+    return df
+  
+  df['AssessmentDate'] = pd.to_datetime(df['AssessmentDate']).dt.date
+  result = df [
+        (df['AssessmentDate'] >= reporting_start) & 
+        (df['AssessmentDate'] <= reporting_end)
+    ]  
+  return result
+  
+  
 def match_and_get_issues(e_df, a_df
                          , inperiod_atomslk_notin_ep
                          , inperiod_epslk_notin_atom
@@ -399,6 +411,13 @@ def match_and_get_issues(e_df, a_df
           d. Warning: Successfully date-matched, but - SLK+Program combination not in Episodes (only in Assessment)
           e. Warning: Successfully date-matched, but - SLK+Program combination not in Assessment (only in Episodes)
     """
+    ##########################
+    # IMPORTANT: we're matching a broader period to get Stage right
+    # but we only need to report errors in the reporting period
+    #############
+    reporting_start = pd.to_datetime(reporting_start).date()
+    reporting_end = pd.to_datetime(reporting_end).date()
+
     # XXA this assumes Assessment's program is always Correct 
     slkprog_datematched, dates_ewdf \
     , slk_prog_onlyinass, slk_prog_onlyin_ep  = do_matches_slkprog(
@@ -408,22 +427,35 @@ def match_and_get_issues(e_df, a_df
                                                         )
     a_key = dk.assessment_id.value # SLK +RowKey
     # ATOMs that could not be date matched with episode, when merging on SLK+Program
-    unmatched_asmt_by_slkprog, _ = utdf.get_delta_by_key(a_df
+    if not slkprog_datematched.empty:
+      unmatched_asmt_by_slkprog, _ = utdf.get_delta_by_key(a_df
                                                          , slkprog_datematched
                                                          , key=a_key)
-    # unmatched_asmt_by_slkprog = utdf.filter_out_common(a_ineprogs, slkprog_datematched, a_key)
+    # unmatched_asmt_by_slkprog = utdf.filter_out_common(a_ineprogs, slkprog_datematched, a_key)      
+      if not unmatched_asmt_by_slkprog.empty:
+        slkonly_datematched, dates_ewdf2 \
+          , slk_onlyinass, merge_key2  = do_matches_slk(unmatched_asmt_by_slkprog 
+                                                                , e_df
+                                                                , slack_for_matching
+                                                                )
 
-    slkonly_datematched, dates_ewdf2 \
-      , slk_onlyinass, merge_key2  = do_matches_slk(unmatched_asmt_by_slkprog 
-                                                            , e_df
-                                                            , slack_for_matching
-                                                            )
-
-    slkonly_datematched_v2 = exclude_mismatched_dupe_assessments(slkprog_datematched
-                                                                 , slkonly_datematched)
-    slkonly_datematched_v2 = fix_incorrect_program(slkonly_datematched_v2)
-
-    final_good = pd.concat([slkprog_datematched, slkonly_datematched_v2])
+        slkonly_datematched_v2 = exclude_mismatched_dupe_assessments(slkprog_datematched
+                                                                    , slkonly_datematched)
+        slkonly_datematched_v2 = fix_incorrect_program(slkonly_datematched_v2)
+        slk_onlyinass = pd.concat([slk_onlyinass, inperiod_atomslk_notin_ep])
+        
+        final_good = pd.concat([slkprog_datematched, slkonly_datematched_v2])
+        filtered_slk_onlyinass = filter_by_date(slk_onlyinass, reporting_start, reporting_end)
+      else:
+        final_good = slkprog_datematched  # all were date matched with SLK+Prog key ! :)
+        slk_onlyinass = pd.DataFrame()
+        dates_ewdf2 = pd.DataFrame()
+        filtered_slk_onlyinass = pd.DataFrame()
+    else:
+      final_good =  pd.DataFrame(columns=['SLK_RowKey'])
+      slk_onlyinass = pd.DataFrame()
+      dates_ewdf2 = pd.DataFrame()
+      filtered_slk_onlyinass = pd.DataFrame()
 
     # can't use the result above (_)as we are only using the un-merged assesemtns (slk_prog_onlyinass) as input
     slk_onlyin_ep, _ = utdf.get_delta_by_key(e_df, a_df, key='SLK')
@@ -431,11 +463,11 @@ def match_and_get_issues(e_df, a_df
 
     # TODO: explain why these are two different things (pre date-matching vs post date-matching errors)
     print("concating pre-match missing SLK errors of lengths :")
-    print(f"\n\t only-in-ATOM: {len(inperiod_atomslk_notin_ep)}  ; only in Episode: {len(inperiod_epslk_notin_atom)} ")
-    slk_onlyinass = pd.concat([slk_onlyinass, inperiod_atomslk_notin_ep])
+    print(f"\n\t only-in-ATOM: {len(inperiod_atomslk_notin_ep)}  ; only in Episode: {len(inperiod_epslk_notin_atom)} ")    
     slk_onlyin_ep = pd.concat([slk_onlyin_ep, inperiod_epslk_notin_atom])
     
-    if config.get(MatchingConstants.GET_NEAREST_SLK, 0) == 1:
+    if config.get(MatchingConstants.GET_NEAREST_SLK, 0) == 1 and \
+        not slk_onlyinass.empty and not slk_onlyin_ep.empty:
       slk_onlyinass_uq:pd.Series = pd.Series(slk_onlyinass.SLK.unique()) 
       slk_onlyinep_uq = slk_onlyin_ep.SLK.unique().tolist()
   
@@ -448,24 +480,12 @@ def match_and_get_issues(e_df, a_df
 
     # no need to do the reverse directions - redundant and CCAR EP SLKs are considered the authority
     
-    ##########################
-    # IMPORTANT: we're matching a broader period to get Stage right
-    # but we only need to report errors in the reporting period
-    #############
-    slk_onlyinass['AssessmentDate'] = pd.to_datetime(slk_onlyinass['AssessmentDate']).dt.date
-    slk_prog_onlyinass['AssessmentDate'] = pd.to_datetime(slk_prog_onlyinass['AssessmentDate']).dt.date
-    reporting_start = pd.to_datetime(reporting_start).date()
-    reporting_end = pd.to_datetime(reporting_end).date()
-    
-    filtered_slk_onlyinass = slk_onlyinass [
-        (slk_onlyinass['AssessmentDate'] >= reporting_start) & 
-        (slk_onlyinass['AssessmentDate'] <= reporting_end)
-    ]
-    filtered_slk_prog_onlyinass = slk_prog_onlyinass [
-        (slk_prog_onlyinass['AssessmentDate'] >= reporting_start) & 
-        (slk_prog_onlyinass['AssessmentDate'] <= reporting_end)
-    ]
-    
+    if not slk_prog_onlyinass.empty:
+      filtered_slk_prog_onlyinass = filter_by_date(slk_prog_onlyinass, reporting_start , reporting_end)
+    else:
+      filtered_slk_prog_onlyinass = pd.DataFrame()
+  
+     
     ew = {
         'slk_onlyinass': filtered_slk_onlyinass,
         'slk_onlyin_ep': slk_onlyin_ep,
@@ -476,5 +496,5 @@ def match_and_get_issues(e_df, a_df
     }    
     return final_good, ew
   
-  
+
   # if __name__ =='__main__':

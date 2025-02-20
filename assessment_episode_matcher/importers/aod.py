@@ -4,80 +4,14 @@ from assessment_episode_matcher.data_config import PDC_ODC_ATOMfield_names as PD
 from assessment_episode_matcher.utils.fromstr import range_average
 from assessment_episode_matcher.utils.df_ops_base import drop_fields
 from assessment_episode_matcher.mytypes import AODWarning
-# import mylogging
-# logging = mylogging.get(__name__)
 
-
-
-
-# TODO: use NADA fields
-# DU Heroin use number of days
-# DU Other opioid use number of days
-# DU Cannabis use number of days
-# DU Cocaine use number of days
-# DU Amphetamine use number of days
-# DU Tranquilliser use number of days
-# DU Another drug use number of days
-# DU Alcohol use number of days
-
-
-
-
-# def convert_str_to_int_rounded(str_number:str) -> int:
-#     return int(round(float(str_number),0))
-
-"""
-  2nd return variable it whether a category was found or not
-"""
 def get_drug_category(drug_name:str, aod_groupings:dict) -> tuple[str, int]:
-  # found_category  = 0  
   for category_name, substances in aod_groupings.items():
      if drug_name in substances:
         return category_name, 1
-  # print(f"no category for drug {drug_name}. ")
-  # logging.error(f"no category for drug {drug_name}. ")
   return drug_name, 0
 
-"""
-    # Amphetamine Typical Qty: 
-    # 0 to 999 (plus description of units) String 50
-    # The average amount of amphetamine used on a typical day during the past four weeks. 
-    # Agree on a meaningful unit of measure with the client. Common units of measure may include ‘grams’, 
-    # number of times used per days, or the monetary value of drugs consumed. 
-    # Please use the same unit of measure for subsequent survey time points.  
-"""
-# def get_typical_qty(item, field_names:dict[str, str], assessment):
-#   field_perocc = field_names['per_occassion']
-#   field_units = field_names['units']
-#   empty = "0;"
-#   typical_qty = item.get(field_perocc,'')
-#   typical_unit = item.get(field_units,'')
-#   qty_str =""
-#   if not typical_qty:
-#      return typical_qty, None
-#   if not pd.isna(typical_qty):      
-#       if typical_qty == '0':
-#          return empty, 0.0
-#       if typical_qty == 'Other':
-#          logging.error("'Other' used for HowMuchPerOcassion. Un-reportable value", assessment['RowKey'])
-#          return '', None
-#       typical_qty = range_average(typical_qty)
-#       qty_str = f"{typical_qty}"
-#       if typical_unit:
-#         qty_str = f"{qty_str}; {typical_unit} units."
-#   return qty_str, typical_qty
-
-  # def __init__(self, item:dict, drug_name, field_name, assessment):
-
-
-# def get_warning(item:dict, drugname, field_name:str, assessment):  
-#   warning = ( assessment.SLK, assessment.RowKey,         
-#           { drugname: item.get(drugname),
-#            'InvalidValue': item.get(field_name), 'InvalidFieldName': field_name}
-#   )
-#   return warning
-
-def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float, str, str, AODWarning|None]: #tuple[float|None, str|None, str]:
+def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float, str, str, AODWarning|None]:
   field_perocc = field_names['per_occassion']
   field_units = field_names['units']
 
@@ -88,14 +22,11 @@ def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float
      warning = AODWarning(assessment['SLK'],assessment['RowKey']
                           ,drug_name=field_names['drug_name']
                           , field_name=field_perocc)
-    #  warning = get_warning(item, field_names['drug_name'], field_perocc, assessment)
      return typical_qty, "", "", warning
   if not pd.isna(typical_qty):
-      if typical_qty == '0': # Don't bother with unit if qty = 0
+      if typical_qty == '0':
          return 0.0, "", "0", None
       if typical_qty == 'Other':
-        #  logging.warn(f"'Other' used for HowMuchPerOcassion. Un-reportable value { assessment.get('RowKey')}")
-        #  warning = get_warning(item, field_names['drug_name'], field_perocc, assessment)
          warning = AODWarning(assessment['SLK'],assessment['RowKey']
                                , drug_name=field_names['drug_name']
                           , field_name=field_perocc
@@ -103,7 +34,6 @@ def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float
          return 0.0, "", "", warning
       typical_qty = range_average(typical_qty)
   if not typical_unit:
-    #  warning = get_warning(item, field_names['drug_name'], field_units, assessment)
      warning = AODWarning(assessment['SLK'],assessment['RowKey']
                           ,drug_name=field_names['drug_name']
                           , field_name=field_units
@@ -112,34 +42,26 @@ def get_typical_qty(item, field_names:dict[str, str], assessment)->  tuple[float
 
   return typical_qty, typical_unit, f"{typical_qty}; {typical_unit}", None
 
-
 def process_drug_list_for_assessment(pdc_odc_colname:str, assessment, config:dict):
   row_data = {}
   warnings = []
   drug_categories= config["drug_categories"]
-  for item in assessment[pdc_odc_colname]: #'ODC: []' in row
-    # Extract data for each substance
+  for item in assessment[pdc_odc_colname]:
     field_names  = PDC_ODC_fields[pdc_odc_colname]
     field_drug_name = field_names['drug_name']
     field_use_ndays = field_names['used_in_last_4wks']
 
-    if not item: # {}
+    if not item:
       continue 
 
     substance = item.get(field_drug_name, '')    
     if not substance:
-      # logging.error(f"Data Quality error {field_drug_name} not in drug dict. SLK:{assessment['PartitionKey']}, RowKey:{assessment['RowKey']}.")
       continue
-    # unique_subtances.append(substance) 
-    mapped_drug, found_category = get_drug_category (substance
-                                                     , aod_groupings=drug_categories)
+
+    mapped_drug, found_category = get_drug_category(substance, aod_groupings=drug_categories)
     if not found_category:
       warning = AODWarning(assessment['SLK'],assessment['RowKey']
                            ,drug_name=substance, field_name=field_drug_name)
-      # warning = get_warning(item
-      #                       , drugname=substance
-      #              ,field_name=field_drug_name
-      #              ,assessment=assessment)
       warnings.append(warning)
       if not row_data or not( 'Another Drug1' in row_data) or pd.isna(row_data['Another Drug1']):
         row_data['Another Drug1'] = mapped_drug
@@ -147,26 +69,18 @@ def process_drug_list_for_assessment(pdc_odc_colname:str, assessment, config:dic
       else:
         row_data['Another Drug2'] = mapped_drug
         mapped_drug ='Another Drug2'
-                 
-    # if not field_use_ndays in item:
-    #   logging.error(f"Data Quality error {field_use_ndays} not in drug({substance})dict. \
-    #                SLK:{assessment['SLK']}, RowKey:{assessment['RowKey']}.")
-    # if not field_perocc in item:
-    #   logging.error(f"Data Quality error {field_perocc} not in drug({substance})dict. \
-    #                SLK:{assessment['SLK']}, RowKey:{assessment['RowKey']}.")             
        
     row_data[ f"{mapped_drug}_DaysInLast28"] = item.get(field_use_ndays,'')     
     per_occassion , typical_unit_str, typical_use_str, warning =  get_typical_qty(item, field_names, assessment)
 
     if per_occassion:
-      row_data [ f"{mapped_drug}_PerOccassionUse"] = str(int(per_occassion)) # HACK - prefer to do this at the end before writing to survey.txt file
+      row_data [ f"{mapped_drug}_PerOccassionUse"] = str(int(per_occassion))
     row_data [ f"{mapped_drug}_Units"] = typical_unit_str
     row_data [ f"{mapped_drug}_TypicalQtyStr"] = typical_use_str
     if warning:
       warnings.append(warning)
 
   return row_data, warnings
-
 
 def normalize_pdc_odc(df:pd.DataFrame, config:dict):
   new_data = []
@@ -184,7 +98,6 @@ def normalize_pdc_odc(df:pd.DataFrame, config:dict):
       if warnings2:
          warnings.extend(warnings2)
     
-    # merge the dicts
     row_data = pdc_row_data | odc_row_data
     if row_data:
         new_data.append(row_data)
@@ -192,151 +105,376 @@ def normalize_pdc_odc(df:pd.DataFrame, config:dict):
         new_data.append({})
   expanded_data = pd.DataFrame(new_data, index=df.index)   
   return expanded_data, warnings
-    # # Create a DataFrame from the list of dictionaries
-    # expanded_data = pd.DataFrame(new_data, index=df.index)
 
-    # # Combine the new columns with the original DataFrame
-    # # result_df = pd.concat([df, expanded_data], axis=1)
-    # # print(set(unique_subtances))
-    # # return result_df
-    # return expanded_data
-
-
-
-def expand_drug_info(df1:pd.DataFrame, config:dict) ->  tuple[pd.DataFrame, list[AODWarning]]:
-
-  #  masked_rows=  df1[('ODC' in df1) and df1['ODC'].apply(lambda x: isinstance(x,list) and len(x) > 0 )]
-  normd_drugs_df, warnings = normalize_pdc_odc(df1, config)
-    # debug: normd_drugs_df.loc[2][normd_drugs_df.loc[2].notna()]
-  cloned_df = df1.join(normd_drugs_df)
-  cloned_df = drop_fields(cloned_df,['PDC','ODC'])
-    #debug : cloned_df.loc[2, [c for c in cloned_df.columns if 'Heroin_' in c]]
-
-     
-  return cloned_df, warnings
-# def expand_drug_info(df1:pd.DataFrame) ->  pd.DataFrame:
-
-#   #  masked_rows=  df1[('ODC' in df1) and df1['ODC'].apply(lambda x: isinstance(x,list) and len(x) > 0 )]
-#   normd_drugs_df = normalize_pdc_odc(df1)
+def create_structure_masks(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """
+    Create boolean masks for new and old structure rows
+    """
+    new_mask = (
+        df['DrugsOfConcernDetails'].notna() & 
+        df['PDCSubstanceOrGambling'].notna()
+    )
     
-#   cloned_df = df1.copy()
-#   # cloned_df.drop(['PDC', 'ODC'], inplace=True)
-
-#   # col_index = {}
-#   # my_drug_cols = list(set(normd_pdc.columns + normd_odc.columns))
-#   # suffixes = ('_PerOccassionUse', '_DaysInLast28' , '_TypicalQty' )
-  
-#   for index, row_dict in normd_drugs_df.iterrows():
-#     # Find columns with the specified suffix
-#     # relevant_columns = [col for col in df.columns if any(col.endswith(suffix) for suffix in suffixes)]
-#     # Check for non-empty and non-NaN values in these columns
-#     # non_empty_values = {col: row_dict[col] for col in row_dict 
-#     #                     if col in row_dict and pd.notna(row_dict[col])}
+    old_mask = (
+        (df['PDC'].notna()) | 
+        (df['ODC'].notna())
+    )
     
-#     for drug_cat_col, val in row_dict.items():
-#       cloned_df.at[index, drug_cat_col] = val
+    return new_mask, old_mask
 
-#         # new_fields_to_keep.append(col_perocc, col_daysin28)  
-#   return cloned_df #, new_fields_to_keep
+NEW_TO_OLD_MAPPING = {
+    'DrugsOfConcern': 'PDCSubstanceOrGambling',  
+    'MethodOfUse': 'PDCMethodOfUse',
+    'DaysInLast28': 'PDCDaysInLast28',
+    'Units': 'PDCUnits',
+    'HowMuchPerOccasion': 'PDCHowMuchPerOccasion',
+    'Goals': 'PDCGoals'
+}
 
-# def expand_drug_info(df1:pd.DataFrame) -> tuple[pd.DataFrame, list]:
-#   new_fields_to_keep = []
-#   #  masked_rows=  df1[('ODC' in df1) and df1['ODC'].apply(lambda x: isinstance(x,list) and len(x) > 0 )]
-#   normd_pdc = normalize_multiple_elements(df1,'PDC')
-#   normd_odc = normalize_multiple_elements(df1,'ODC')
-  
-#   cloned_df = df1.copy()
-#   # cloned_df.drop(['PDC', 'ODC'], inplace=True)
-
-#   # col_index = {}
-
-#   for index, row in normd_pdc.iterrows():
-#     for drug_cat in nada_drug_days_categories.keys():
+def convert_new_to_old_structure(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert new drug info structure to old structure for compatibility"""
+    df = df.copy()
+    
+    # Initialize PDC with single-item list placeholder, ODC with empty list
+    if 'PDC' not in df.columns:
+        df['PDC'] = None # pd.Series([[None]] * len(df), index=df.index)  # Single-item list
+    if 'ODC' not in df.columns:
+        df['ODC'] = None #pd.Series([[] for _ in range(len(df))], index=df.index)  # Empty list
+    
+    # For each row, create PDC and ODC lists
+    for idx in df.index:  # Use actual index values
+        row = df.loc[idx]
+        pdc_substance = row.get('PDCSubstanceOrGambling')
+        drugs_list = row.get('DrugsOfConcernDetails', [])
         
-#         col_perocc  = f"{drug_cat}_PerOccassionUse"
-#         col_daysin28 = f"{drug_cat}_DaysInLast28"
-#         # col_perocc in normd_pdc.loc[0].keys() /
-#         # if either of these columns are blank in the PDC, use the ODC one
-#         if pd.isnull(normd_pdc.at[index, col_perocc]) or pd.isnull(normd_pdc.at[index, col_daysin28]) :
-#            cloned_df.at[index, col_perocc] = normd_odc.at[index, col_perocc]
-#            cloned_df.at[index, col_daysin28] = normd_odc.at[index, col_daysin28]
-#         else:
-#            cloned_df.at[index, col_perocc] = normd_pdc.at[index, col_perocc]
-#            cloned_df.at[index, col_daysin28] = normd_pdc.at[index, col_daysin28]
-  
-#   new_fields_to_keep = [col for col in cloned_df.columns
-#                         if '_PerOccassionUse' in col or '_DaysInLast28' in col or '_TypicalQty'  in col] 
-  
-#         # new_fields_to_keep.append(col_perocc, col_daysin28)
-#   return cloned_df, new_fields_to_keep
+        pdc_item = None
+        odc_list = []
+        
+        for drug in drugs_list:
+            if drug['DrugsOfConcern'] == pdc_substance:
+                # PDC is always a single item
+                pdc_item = {
+                    'PDCSubstanceOrGambling': drug['DrugsOfConcern'],
+                    'PDCMethodOfUse': drug['MethodOfUse'],
+                    'PDCDaysInLast28': drug['DaysInLast28'],
+                    'PDCUnits': drug.get('Units', ''),
+                    'PDCHowMuchPerOccasion': drug.get('HowMuchPerOccasion', ''),
+                    'PDCGoals': drug.get('Goals', '')
+                }
+            else:
+                # ODC can have 0-5 items
+                odc_item = {
+                    'OtherSubstancesConcernGambling': drug['DrugsOfConcern'],
+                    'MethodOfUse': drug['MethodOfUse'],
+                    'DaysInLast28': drug['DaysInLast28'],
+                    'Units': drug.get('Units', ''),
+                    'HowMuchPerOccasion': drug.get('HowMuchPerOccasion', ''),
+                    'Goals': drug.get('Goals', '')
+                }
+                odc_list.append(odc_item)
+        
+        # Set PDC (always single item)
+        if pdc_item:
+            df._set_value(idx, 'PDC', [pdc_item])
+            
+        # Set ODC (0-5 items)
+        if odc_list:
+            df._set_value(idx, 'ODC', odc_list)
+    
+    # Drop the new structure columns
+    df = drop_fields(df, ['DrugsOfConcernDetails'])
+    
+    return df
 
-# def normalize_multiple_elements(df, column_name):
-#     # unique_subtances =[]
-#     # List to hold row-wise dictionaries for new data
-#     new_data = []
-
-#     for index, row in df.iterrows():
-#       if column_name in row and isinstance(row[column_name], list):
-#         row_data = process_drug_list_for_assessment(column_name, row)
-#         new_data.append(row_data)
-#       else:
-#          new_data.append({})
-
-#     # Create a DataFrame from the list of dictionaries
-#     expanded_data = pd.DataFrame(new_data, index=df.index)
-
-#     # Combine the new columns with the original DataFrame
-#     # result_df = pd.concat([df, expanded_data], axis=1)
-#     # print(set(unique_subtances))
-#     # return result_df
-#     return expanded_data
+def expand_drug_info(df1: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, list[AODWarning]]:
+    """Expand drug information handling mixed structures efficiently"""
+    new_mask, old_mask = create_structure_masks(df1)
+    
+    # Split DataFrame into new and old structures
+    df_new = df1[new_mask].copy() if new_mask.any() else pd.DataFrame()
+    df_old = df1[old_mask].copy() if old_mask.any() else pd.DataFrame()
+    
+    # Process each structure type
+    results = []
+    all_warnings = []
+    
+    if not df_old.empty:
+        expanded_old, warnings_old = normalize_pdc_odc(df_old, config)
+        results.append(expanded_old)
+        all_warnings.extend(warnings_old)
+    
+    if not df_new.empty:
+        df_new_converted = convert_new_to_old_structure(df_new)
+        expanded_new, warnings_new = normalize_pdc_odc(df_new_converted, config)
+        results.append(expanded_new)
+        all_warnings.extend(warnings_new)
+    
+    # Handle invalid rows (neither new nor old structure)
+    invalid_mask = ~(new_mask | old_mask)
+    if invalid_mask.any():
+        invalid_rows = df1[invalid_mask]
+        for idx, row in invalid_rows.iterrows():
+            warning = AODWarning(
+                row.get('SLK', ''),
+                row.get('RowKey', ''),
+                drug_name='',
+                field_name='structure',
+                field_value='Invalid structure - missing required fields'
+            )
+            all_warnings.append(warning)
+    
+    # Combine results maintaining original index order
+    if results:
+        combined_df = pd.concat(results)
+        combined_df = combined_df.reindex(df1.index)
+    else:
+        combined_df = pd.DataFrame(index=df1.index)
+    
+    # Create a copy of original df without PDC/ODC columns
+    preserved_df = drop_fields(df1.copy(), ['PDC', 'ODC'])
+    
+    # Join the normalized drug data with preserved columns
+    final_df = preserved_df.join(combined_df)
+    
+    return final_df, all_warnings
 
 if __name__ == "__main__":
-  # Sample DataFrame
-  df = pd.DataFrame({
-      'PartitionKey':[
-         'ABC',
-         'DEF',
-         'GHI',
-         'JKL',
-         'MNO',
-         'PQR'
-      ],
-      'RowKey':[
-         'rkABC',
-         'rkDEF',
-         'rkGHI',
-         'rkJKL',
-         'rkMNO',
-         'rkPQR'
-      ],
-      'PDC': [
-          [{'PDCSubstanceOrGambling': 'Cannabinoids', 'PDCDaysInLast28': '20', 'PDCHowMuchPerOccasion': 55.0,'PDCUnits': 'blunts'}],
-          [{'PDCSubstanceOrGambling': 'Psychostimulants, n.f.d.', 'PDCDaysInLast28': '15'}],
-          [{'PDCSubstanceOrGambling': 'Ethanol', 'PDCDaysInLast28': '15',  'PDCUnits': 'standard drinks'}],  
+    # Sample config
+    config = {
+        "drug_categories": {
+            "Cannabis": ["Cannabinoids", "Cannabis"],
+            "Alcohol": ["Ethanol"],
+            "Stimulants": ["Caffeine", "Psychostimulants, n.f.d.", "MDMA/Ecstasy"]
+        }
+    }
 
-          [{'PDCSubstanceOrGambling': 'Ethanol', 'PDCDaysInLast28': '115'}],  
-          [{'PDCSubstanceOrGambling': 'Caffeine', 'PDCDaysInLast28': '15', 'PDCHowMuchPerOccasion': 25.0}],  
-          [{'PDCSubstanceOrGambling': 'Ethanol', 'PDCDaysInLast28': '25'}],  
-          
-      ],
-      'ODC': [
-          [{'OtherSubstancesConcernGambling': 'Caffeine', 'DaysInLast28': '10', 'HowMuchPerOccasion': '50-59' }],          
-           None,
-           [{ 'DaysInLast28': '10', 'HowMuchPerOccasion': '50-59' }],
-          
-          [],
-          [{ 'OtherSubstancesConcernGambling': 'Ethanol', 'HowMuchPerOccasion': '50-59' }],
-          [{ 'OtherSubstancesConcernGambling': 'Ethanol','DaysInLast28': '10','HowMuchPerOccasion': '50-59','Units': 'standard drinks'}],
+    # Test setting ODC list in NaN cell with non-contiguous indices
+    df_nan_test = pd.DataFrame({
+        'PartitionKey': ['ABC', 'DEF', 'GHI'],
+        'RowKey': ['rk115', 'rk171', 'rk202'],
+        'SLK': ['SLK1', 'SLK2', 'SLK3']
+    }, index=[115, 171, 202])  # Non-contiguous indices
+    
+    # Initialize columns with NaN
+    df_nan_test['PDC'] = pd.NA
+    df_nan_test['ODC'] = pd.NA
+    df_nan_test['DrugsOfConcernDetails'] = pd.NA
+    df_nan_test['PDCSubstanceOrGambling'] = pd.NA
 
+    # Test case that would have caught the bug:
+    # Setting ODC list in NaN cell at non-contiguous index
+    df_nan_test._set_value(171, 'DrugsOfConcernDetails', [
+        {
+            'DrugsOfConcern': 'Cannabis',
+            'MethodOfUse': 'Smoke',
+            'DaysInLast28': '5',
+            'Units': 'cones / joints',
+            'HowMuchPerOccasion': '3'
+        },
+        {
+            'DrugsOfConcern': 'Nicotine',
+            'MethodOfUse': 'Inhale',
+            'DaysInLast28': '0',
+            'Units': 'dosage',
+            'HowMuchPerOccasion': '0'
+        }
+    ])
+    df_nan_test.loc[171, 'PDCSubstanceOrGambling'] = 'Cannabis'  # Not a list, can use loc
 
-          # [{'OtherSubstancesConcernGambling': 'Cocaine', 'DaysInLast28': '5'}],      
-          # [],
-          # [{'OtherSubstancesConcernGambling': 'Benzodiazepines, n.f.d.', 'DaysInLast28': '15', 'HowMuchPerOccasion': '2'}],      
-      ]
-  })
+    print("\nTesting NaN handling with non-contiguous indices:")
+    print("\nInput DataFrame:")
+    print(df_nan_test)
+    print("\nODC column before conversion:")
+    print(df_nan_test['ODC'])
+    out_nan_test, warnings_nan_test = expand_drug_info(df_nan_test, config)
+    print("\nOutput after conversion:")
+    print(out_nan_test)
+    print("\nWarnings:")
+    for w in warnings_nan_test:
+        print(w)
 
-  # out, warnings = expand_drug_info(df)
-  # # TODO : delete PDC and ODC columns
-  # print(out)
-  # print(warnings)
+    # Test non-contiguous index handling
+    df_noncontiguous = pd.DataFrame({
+        'PartitionKey': ['ABC', 'DEF', 'GHI'],
+        'RowKey': ['rk115', 'rk171', 'rk202'],
+        'SLK': ['SLK1', 'SLK2', 'SLK3']
+    }, index=[115, 171, 202])  # Non-contiguous indices
+    
+    # Initialize columns with None
+    df_noncontiguous['PDC'] = None
+    df_noncontiguous['ODC'] = None
+    df_noncontiguous['DrugsOfConcernDetails'] = None
+    df_noncontiguous['PDCSubstanceOrGambling'] = None
+
+    # Set test data using _set_value for list values
+    df_noncontiguous._set_value(115, 'PDC', [{
+        'PDCSubstanceOrGambling': 'Cannabinoids',
+        'PDCDaysInLast28': '20',
+        'PDCHowMuchPerOccasion': '55.0',
+        'PDCUnits': 'blunts'
+    }])
+    df_noncontiguous._set_value(171, 'DrugsOfConcernDetails', [{
+        'DrugsOfConcern': 'Ethanol',
+        'MethodOfUse': 'Ingest',
+        'DaysInLast28': '20',
+        'Units': 'standard drinks',
+        'HowMuchPerOccasion': '6'
+    }])
+    df_noncontiguous.loc[171, 'PDCSubstanceOrGambling'] = 'Ethanol'  # Not a list, can use loc
+    df_noncontiguous._set_value(202, 'ODC', [{
+        'OtherSubstancesConcernGambling': 'MDMA/Ecstasy',
+        'DaysInLast28': '4',
+        'Units': 'pills'
+    }])
+
+    print("\nTesting non-contiguous indices:")
+    print("\nInput DataFrame:")
+    print(df_noncontiguous)
+    out_noncontiguous, warnings_noncontiguous = expand_drug_info(df_noncontiguous, config)
+    print("\nOutput for non-contiguous indices:")
+    print(out_noncontiguous)
+    print("\nWarnings for non-contiguous indices:")
+    for w in warnings_noncontiguous:
+        print(w)
+
+    # Test column preservation and reindexing
+    df_preservation = pd.DataFrame({
+        'PartitionKey': ['ABC', 'DEF', 'GHI'],
+        'RowKey': ['rk115', 'rk171', 'rk202'],
+        'SLK': ['SLK1', 'SLK2', 'SLK3'],
+        'Age': [25, 30, 35],  # Non-drug column
+        'Gender': ['M', 'F', 'M'],  # Non-drug column
+        'Location': ['Sydney', 'Melbourne', 'Brisbane']  # Non-drug column
+    }, index=[115, 171, 202])  # Non-contiguous indices
+
+    # Add drug data
+    df_preservation['PDC'] = None
+    df_preservation['ODC'] = None
+    df_preservation['DrugsOfConcernDetails'] = None
+    df_preservation['PDCSubstanceOrGambling'] = None
+
+    # Row 1: Old structure
+    df_preservation._set_value(115, 'PDC', [{
+        'PDCSubstanceOrGambling': 'Cannabinoids',
+        'PDCDaysInLast28': '20',
+        'PDCHowMuchPerOccasion': '55.0',
+        'PDCUnits': 'blunts'
+    }])
+
+    # Row 2: New structure
+    df_preservation.loc[171, 'PDCSubstanceOrGambling'] = 'Ethanol'
+    df_preservation._set_value(171, 'DrugsOfConcernDetails', [{
+        'DrugsOfConcern': 'Ethanol',
+        'MethodOfUse': 'Ingest',
+        'DaysInLast28': '20',
+        'Units': 'standard drinks',
+        'HowMuchPerOccasion': '6'
+    }])
+
+    # Row 3: Mixed data
+    df_preservation._set_value(202, 'ODC', [{
+        'OtherSubstancesConcernGambling': 'MDMA/Ecstasy',
+        'DaysInLast28': '4',
+        'Units': 'pills'
+    }])
+
+    print("\nTesting column preservation and reindexing:")
+    print("\nInput DataFrame with non-drug columns:")
+    print(df_preservation)
+    out_preservation, warnings_preservation = expand_drug_info(df_preservation, config)
+
+    print("\nOutput DataFrame:")
+    print(out_preservation)
+
+    # Verify column preservation
+    print("\nVerifying column preservation:")
+    original_cols = ['PartitionKey', 'RowKey', 'SLK', 'Age', 'Gender', 'Location']
+    for col in original_cols:
+        if col not in out_preservation.columns:
+            print(f"ERROR: Column {col} was lost")
+        else:
+            print(f"Column {col} preserved")
+
+    # Verify row integrity
+    print("\nVerifying row integrity:")
+    for idx in df_preservation.index:
+        original_row = df_preservation.loc[idx]
+        output_row = out_preservation.loc[idx]
+        
+        # Check demographic data stayed with correct row
+        for col in original_cols:
+            if original_row[col] != output_row[col]:
+                print(f"ERROR: Row {idx} value mismatch in {col}")
+                print(f"Original: {original_row[col]}")
+                print(f"Output: {output_row[col]}")
+
+    print("\nWarnings for preservation test:")
+    for w in warnings_preservation:
+        print(w)
+
+    # Test mixed structure DataFrame
+    df_mixed = pd.DataFrame({
+        'PartitionKey': ['ABC', 'DEF', 'GHI', 'JKL'],
+        'RowKey': ['rk1', 'rk2', 'rk3', 'rk4'],
+        'SLK': ['SLK1', 'SLK2', 'SLK3', 'SLK4'],
+        'PDC': [None] * 4,
+        'ODC': [None] * 4,
+        'DrugsOfConcernDetails': [None] * 4,
+        'PDCSubstanceOrGambling': [None] * 4
+    })
+
+    # Row 1: Old structure
+    df_mixed._set_value(0, 'PDC', [{
+        'PDCSubstanceOrGambling': 'Cannabinoids',
+        'PDCDaysInLast28': '20',
+        'PDCHowMuchPerOccasion': '55.0',
+        'PDCUnits': 'blunts'
+    }])
+    df_mixed._set_value(0, 'ODC', [{
+        'OtherSubstancesConcernGambling': 'Caffeine',
+        'DaysInLast28': '10',
+        'HowMuchPerOccasion': '50-59'
+    }])
+
+    # Row 2: New structure
+    df_mixed.loc[1, 'PDCSubstanceOrGambling'] = 'Ethanol'  # Not a list, can use loc
+    df_mixed._set_value(1, 'DrugsOfConcernDetails', [
+        {
+            'DrugsOfConcern': 'Ethanol',
+            'MethodOfUse': 'Ingest',
+            'DaysInLast28': '20',
+            'Units': 'standard drinks',
+            'HowMuchPerOccasion': '6'
+        },
+        {
+            'DrugsOfConcern': 'Cannabis',
+            'MethodOfUse': 'Smoke',
+            'DaysInLast28': '5',
+            'Units': 'cones / joints',
+            'HowMuchPerOccasion': '3'
+        }
+    ])
+
+    # Row 3: Old structure
+    df_mixed._set_value(2, 'PDC', [{
+        'PDCSubstanceOrGambling': 'MDMA/Ecstasy',
+        'PDCDaysInLast28': '4',
+        'PDCUnits': 'pills'
+    }])
+
+    # Row 4: Invalid structure (all None/empty)
+
+    print("\nTesting mixed structures:")
+    out_mixed, warnings_mixed = expand_drug_info(df_mixed, config)
+    print("\nOutput for mixed structures:")
+    print(out_mixed)
+    print("\nWarnings for mixed structures:")
+    for w in warnings_mixed:
+        print(w)
+
+    # Verify structure detection
+    new_mask, old_mask = create_structure_masks(df_mixed)
+    print("\nStructure detection results:")
+    print("New structure rows:", df_mixed[new_mask].index.tolist())
+    print("Old structure rows:", df_mixed[old_mask].index.tolist())
+    print("Invalid rows:", df_mixed[~(new_mask | old_mask)].index.tolist())
