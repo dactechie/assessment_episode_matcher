@@ -13,7 +13,10 @@ def get_stage_per_episode(df:pd.DataFrame)-> pd.Series:
 def set_not_answered(df1:pd.DataFrame, notanswered_cols:list) -> pd.DataFrame:
   df = df1.copy()
   for col in notanswered_cols:
-    df[col] = df[col].replace('', -1).infer_objects(copy=False)
+    # Use the recommended approach to handle the FutureWarning
+    # This addresses the pandas FutureWarning about downcasting behavior
+    result = df[col].replace('', -1)
+    df[col] = result.infer_objects(copy=False)
     # infer: instruct pandas to infer the data type of the resulting
     # column and perform any necessary downcasting.
   return df
@@ -36,7 +39,7 @@ def generate_finaloutput_df(df1):
   # df["Stage"] = get_stage_per_episode(df)
 
   df_final = prescribe_fields(df, nada_final_fields)
-  df_final = cols_prep(df, nada_final_fields, fill_new_cols="")
+  df_final = cols_prep(df_final, nada_final_fields, fill_new_cols="")
   
   # TODO zfill PID
   cols_fill4 = ['PDCCode', 'PMSPersonID']

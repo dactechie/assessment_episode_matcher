@@ -34,6 +34,8 @@ passcode at the bttom of :
 
 
 # Versions
+- 0.7.1 - replaced deprecated pandas operation.
+- 0.7.0 - handling old and new format of recording drugs of use. survey.txt for youth program can now be produced.
 - 0.6.9 - filter our ClinicalAssessments as it does not have anything Outcome Measures related.
 - 0.6.8 - Program consistency check between asmts and eps was too limiting - not required as all within legit NADA programs.
 - 0.6.7 - discover right dataset (ep period) matching, bugfix sdata expand, only errors for inperiod, code export tools(for AI support)
