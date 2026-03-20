@@ -110,10 +110,22 @@ nada_cols = [
 
 # # 131 ATOP 1K.1 Daily Tobacco Use Confirmation of the client’s use of tobacco
 # # 132 ATOP 1K.2  Daily Tobacco Use Typical Qty The average amount of tobacco used on a typical day during the past four weeks.
-,'Nicotine_TypicalQtyStr'  # TODO: WARNING :typical day  != occassion
-,'Nicotine_DaysInLast28'
 
-, 'Nicotine_PerOccassionUse' # for DU
+,'Nicotine_Vaping'
+,'Nicotine_Vaping_TypicalQtyStr'  # TODO: WARNING :typical day  != occassion
+,'Nicotine_Vaping_DaysInLast28'
+
+#,'Nicotine_DaysInLast28'
+#, 'Nicotine_PerOccassionUse' # for DU
+
+, 'Tobacco_Cigarettes'
+, 'Tobacco_Cigarettes_TypicalQtyStr'  # 130
+, 'Tobacco_Cigarettes_DaysInLast28'
+
+
+
+#, 'Tobacco_DaysInLast28'  # 131 ATOP 1K.1 Daily Tobacco Use Confirmation of the client’s use of tobacco
+
 
 ,'Past4WkNumInjectingDays'  # 136 ATOP 1K.2   Injected Total The total number of days injected in the past four weeks.
 
@@ -147,7 +159,8 @@ nada_cols = [
 # -1 not answered/no answer
 notanswered_defaults = [
   'ATOPInjectedUsedEquipment',           ##
-  'ATOPDailyTobaccoUse',                 ##
+  # 'ATOPDailyTobacco_CigarettesUse',                 ##
+  # 'ATOPDailyNicotine_VapingUse',
   # 'YourCurrentHousing_Homeless',         ##
   # 'YourCurrentHousing_Atriskofeviction', ##
 
@@ -173,7 +186,7 @@ nada_final_fields = [
   "Cocaine_DaysInLast28",	"Amphetamines_DaysInLast28", "Benzodiazepines_DaysInLast28",
   "Another Drug1_DaysInLast28","Alcohol_DaysInLast28","Alcohol_PerOccassionUse",
   "DUDrinkingmoreheavilynumberofdrinks","DUDrinkingmoreheavilynumberofdays",
-  "Nicotine_DaysInLast28", "Nicotine_PerOccassionUse",
+  "Nicotine_DaysInLast28", "Nicotine_PerOccassionUse",  # TODO: Does this go away now that we are asking  ATOP I 1.1-1.4
 
 "K10Q01",	"K10Q02",	"K10Q03",	"K10Q04",	"K10Q05",	"K10Q06",	"K10Q07",	"K10Q08",	"K10Q09",	"K10Q10",		
 "K10Q11",	"K10Q12",	"K10Q13",	"K10Q14",	
@@ -211,7 +224,16 @@ nada_final_fields = [
 "Another Drug2",	"Another Drug2_TypicalQtyStr",	"ATOPOtherSubstance2Wk4",	"ATOPOtherSubstance2Wk3",	"ATOPOtherSubstance2Wk2",
     	"ATOPOtherSubstance2Wk1",	"Another Drug2_DaysInLast28",'Another Drug2_NoAnswer',
 
-"ATOPDailyTobaccoUse",	"Nicotine_TypicalQtyStr",				##  TODO	
+#"ATOPDailyTobaccoUse",	
+"Tobacco_Cigarettes_TypicalQtyStr",				##  TODO
+"ATOPTobacco_CigarettesWk4",	"ATOPTobacco_CigarettesWk3",	"ATOPTobacco_CigarettesWk2",
+    	"ATOPTobacco_CigarettesWk1",	"Tobacco_Cigarettes_DaysInLast28",'Tobacco_Cigarettes_NoAnswer',
+
+#"ATOPDailyNicotineUse",	
+"Nicotine_Vaping_TypicalQtyStr",				##  TODO
+"ATOPNicotine_VapingWk4",	"ATOPNicotine_VapingWk3",	"ATOPNicotine_VapingWk2",
+    	"ATOPNicotine_VapingWk1",	"Nicotine_Vaping_DaysInLast28",'Nicotine_Vaping_NoAnswer',
+
 
 "ATOPInjectedWk4",	"ATOPInjectedWk3",	"ATOPInjectedWk2",	"ATOPInjectedWk1",
     	"Past4WkNumInjectingDays",	"ATOPInjectedNoAnswer",	"ATOPInjectedUsedEquipment",
