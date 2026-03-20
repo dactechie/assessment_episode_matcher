@@ -88,10 +88,13 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
 
       # limit columns to write out
       final_dates_ew = final_dates_ew[
-          [k for k in final_dates_ew.columns 
+          [k for k in final_dates_ew.columns
           if k in audit_cfg.COLUMNS_AUDIT_DATES]
           ]
-        
+    # Ensure empty DataFrames have column schema
+    if final_dates_ew.empty:
+        final_dates_ew = pd.DataFrame(columns=audit_cfg.COLUMNS_AUDIT_DATES)
+
     slkonlyin_ep_error = slkonlyin_ep_error[
        [k for k in audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT
         if k in slkonlyin_ep_error.columns]
@@ -155,5 +158,4 @@ def write_validation_results(errors_warnings:dict[str, pd.DataFrame]
 
     for ew_type_name, errs_warns in errors_warnings.items():
       # Always write files, even if empty, to reflect accurate state
-      audit_exporter.export_dataframe(f"{ew_type_name}.csv", errs_warns)       
-       
+      audit_exporter.export_dataframe(f"{ew_type_name}.csv", errs_warns)

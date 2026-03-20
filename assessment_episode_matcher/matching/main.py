@@ -439,17 +439,20 @@ def match_and_get_issues(e_df, a_df
     # unmatched_asmt_by_slkprog = utdf.filter_out_common(a_ineprogs, slkprog_datematched, a_key)      
       if not unmatched_asmt_by_slkprog.empty:
         slkonly_datematched, dates_ewdf2 \
-          , slk_onlyinass, merge_key2  = do_matches_slk(unmatched_asmt_by_slkprog 
+          , slk_onlyinass, merge_key2  = do_matches_slk(unmatched_asmt_by_slkprog
                                                                 , e_df
                                                                 , slack_for_matching
                                                                 )
 
-        slkonly_datematched_v2 = exclude_mismatched_dupe_assessments(slkprog_datematched
-                                                                    , slkonly_datematched)
-        slkonly_datematched_v2 = fix_incorrect_program(slkonly_datematched_v2)
+        if not slkonly_datematched.empty:
+          slkonly_datematched_v2 = exclude_mismatched_dupe_assessments(slkprog_datematched
+                                                                      , slkonly_datematched)
+          slkonly_datematched_v2 = fix_incorrect_program(slkonly_datematched_v2)
+          final_good = pd.concat([slkprog_datematched, slkonly_datematched_v2])
+        else:
+          final_good = slkprog_datematched
+
         slk_onlyinass = pd.concat([slk_onlyinass, inperiod_atomslk_notin_ep])
-        
-        final_good = pd.concat([slkprog_datematched, slkonly_datematched_v2])
         filtered_slk_onlyinass = filter_by_date(slk_onlyinass, reporting_start, reporting_end)
       else:
         final_good = slkprog_datematched  # all were date matched with SLK+Prog key ! :)
