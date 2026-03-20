@@ -3,6 +3,12 @@
 *.parquet
 # *.txt
 *.xlsx
+archive/
+__*.json
+*.txt
+*.prod
+*.pdf
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
