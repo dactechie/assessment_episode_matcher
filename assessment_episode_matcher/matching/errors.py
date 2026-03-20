@@ -93,24 +93,39 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
           ]
         
     slkonlyin_ep_error = slkonlyin_ep_error[
-       [k for k in audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT 
+       [k for k in audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT
         if k in slkonlyin_ep_error.columns]
         ]
+    # Ensure empty DataFrames have column schema
+    if slkonlyin_ep_error.empty:
+        slkonlyin_ep_error = pd.DataFrame(columns=audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENT)
+
     slkprogonlyin_ep_warn = slkprogonlyin_ep_warn[
       [k for k in  audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENTPROG
         if k in slkprogonlyin_ep_warn.columns
       ]
         ]
+    # Ensure empty DataFrames have column schema
+    if slkprogonlyin_ep_warn.empty:
+        slkprogonlyin_ep_warn = pd.DataFrame(columns=audit_cfg.COLUMNS_AUDIT_EPKEY_CLIENTPROG)
+
     slkonlyin_amst_error = slkonlyin_amst_error[
         [k for k in audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENT
         if k in slkonlyin_amst_error.columns
         ]
-    ]  
+    ]
+    # Ensure empty DataFrames have column schema
+    if slkonlyin_amst_error.empty:
+        slkonlyin_amst_error = pd.DataFrame(columns=audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENT)
+
     slkprogonlyin_amst_warn = slkprogonlyin_amst_warn[
         [k for k in audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENTPROG
         if k in slkprogonlyin_amst_warn.columns
-        ]       
+        ]
        ]
+    # Ensure empty DataFrames have column schema
+    if slkprogonlyin_amst_warn.empty:
+        slkprogonlyin_amst_warn = pd.DataFrame(columns=audit_cfg.COLUMNS_AUDIT_ASMTKEY_CLIENTPROG)
 
     ew2 = {
        'dates_ew':final_dates_ew,
@@ -137,8 +152,8 @@ def process_errors_warnings(ew:dict, warning_asmt_ids, merge_key2:str
 
 def write_validation_results(errors_warnings:dict[str, pd.DataFrame]
                              , audit_exporter: DataExporter):
-    
+
     for ew_type_name, errs_warns in errors_warnings.items():
-      if utdf.has_data(errs_warns):
-        audit_exporter.export_dataframe(f"{ew_type_name}.csv", errs_warns)       
+      # Always write files, even if empty, to reflect accurate state
+      audit_exporter.export_dataframe(f"{ew_type_name}.csv", errs_warns)       
        

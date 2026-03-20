@@ -215,16 +215,21 @@ def perform_date_matches(merged_df: pd.DataFrame, match_key:str, slack_ndays:int
     
     if not utdf.has_data(duplicate_rows_dfs):
        return result_matched_df, ew_df
-    multi_match_errors = duplicate_rows_dfs.assign(issue_type=IssueType.ASMT_MATCHED_MULTI.name
-                            , issue_level=IssueLevel.ERROR.name)
-    # # exclude from error reporting if it is in the results:
-    # duplicate_rows_dfs = duplicate_rows_dfs[~duplicate_rows_dfs.PMSEpisodeID_SLK_RowKey
-    #                                         .isin(result_matched_df.PMSEpisodeID_SLK_RowKey)]
-    # # in the errors, show ALL the episodes the assessment matches to
-    # multi_match_errors = merged_df[merged_df.SLK_RowKey.isin(duplicate_rows_dfs.SLK_RowKey)]
-    # multi_match_errors = multi_match_errors.assign(issue_type=IssueType.ASMT_MATCHED_MULTI.name
-    #                         , issue_level=IssueLevel.ERROR.name)
-    final_dates_ewdf = pd.concat([ew_df, multi_match_errors],ignore_index=True)
+
+    # Only flag as ASMT_MATCHED_MULTI if assessment matches to DIFFERENT episodes
+    # (not just duplicate rows for the same episode)
+    multi_match_errors = duplicate_rows_dfs.groupby('SLK_RowKey').filter(
+        lambda x: x['PMSEpisodeID'].nunique() > 1
+    )
+
+    if utdf.has_data(multi_match_errors):
+        multi_match_errors = multi_match_errors.assign(
+            issue_type=IssueType.ASMT_MATCHED_MULTI.name,
+            issue_level=IssueLevel.ERROR.name
+        )
+        final_dates_ewdf = pd.concat([ew_df, multi_match_errors], ignore_index=True)
+    else:
+        final_dates_ewdf = ew_df
 
     # return validation_issues, good_df, ew_df
     return  result_matched_df, final_dates_ewdf

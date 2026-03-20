@@ -76,4 +76,13 @@ def import_data(eps_st:str,  eps_end:str, file_source:FileSource
   raw_df['END DATE'] = raw_df['END DATE'].apply(lambda x: blank_to_today_str(x))
 
   processed_df = prepare(raw_df, config)
+
+  # Deduplicate episodes - same episode may appear multiple times in source data
+  initial_count = len(processed_df)
+  processed_df = processed_df.drop_duplicates(subset=['PMSEpisodeID', 'SLK', 'Program'], keep='first')
+  duplicates_removed = initial_count - len(processed_df)
+
+  if duplicates_removed > 0:
+    logging.warning(f"Removed {duplicates_removed} duplicate episode rows (same PMSEpisodeID, SLK, Program)")
+
   return processed_df, file_path
