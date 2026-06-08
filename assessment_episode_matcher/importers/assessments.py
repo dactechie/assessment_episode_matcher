@@ -2,10 +2,8 @@ import logging
 from typing import Optional
 
 import pandas as pd
-from assessment_episode_matcher.importers.main import FileSource
 from assessment_episode_matcher.utils import io
 from assessment_episode_matcher.mytypes import Purpose
-from assessment_episode_matcher.utils.df_ops_base import has_data
 
 
 def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
@@ -14,75 +12,27 @@ def filter_by_purpose(df:pd.DataFrame, filters:dict|None) -> pd.DataFrame:
   return df[df ['Program'].isin(filters['Program'])]
 
 
-
 def import_data(asmt_st:str, asmt_end:str
-                , file_source:FileSource
                 , prefix:str, suffix:str
-                ,purpose:Purpose, config:dict
+                , purpose:Purpose, config:dict
                 , only_for_slks:Optional[list[str]]
-                , refresh:bool=True
                 ) -> tuple[pd.DataFrame, str|None]:
-  
-  """
-    Returns 2 values - the 2nd is a path to the cached to
 
-    1. If processed file for the period exists:
-        if asking to be refreshed, go to #2
-        else return file
-
-    2. check if raw.parquet file exists
-        Raw_Exists:
-          - if refresh , then refresh raw data
-
-        if timestamp on raw.parquet is more recent than processed.parquet,
-          (or same period processed.parquet does not exist)
-          call process(raw_df) and write to /processed
-
-    3. Raw Does NOT exist:
-
-  """
-
-  purpose_programs = config.get("purpose_programs") # data_config.ATOM_DB_filters[purpose]
+  purpose_programs = config.get("purpose_programs")
   if not (purpose_programs and purpose.name in purpose_programs):
      raise KeyError(f"Missing configurtion for {purpose} programs ")
   filters = { "lists":{
-                  'Program' : list(purpose_programs.get(purpose.name)) 
+                  'Program' : list(purpose_programs.get(purpose.name))
                  }
             }
   if only_for_slks:
     filters['lists']['PartitionKey'] = only_for_slks
-  
-  #1.  if raw parquet exists, process and send back (if doesnt need refresh)
-  file_path, best_start_date, best_end_date = \
-    io.load_for_period(
-                       file_source
-                          , asmt_st
-                          , asmt_end
-                          ,prefix=f"{prefix}_"
-                           , suffix=f"{suffix}.parquet"
-                          )      
-  if file_path:
-    processed_df = file_source.load_parquet_file_to_df(file_path)
-    if has_data(processed_df):
-      # if not refresh:
-      #   logging.debug("found & returning processed parquet file (no need to refresh).")
-        return processed_df,  None
-      # else -> PARTIAL OVERLAP (skip the next else section)
 
-  # else: # not hhas_data(processd_df)
-  logging.info("Raw file doesn't exist. load from DB. " \
-          + f"\n Hardcoding {asmt_st} as start date and today as {asmt_end}.")
-
-  raw_df = io.get_from_source(prefix, int(asmt_st)
-                              ,  int(asmt_end), filters=filters)
-  
-  fname =   io.get_filename(prefix, asmt_st
-                  , asmt_end, suffix=suffix)
-
+  logging.info(f"Loading ATOM data from DB: {asmt_st} to {asmt_end}.")
+  raw_df = io.get_from_source(prefix, int(asmt_st), int(asmt_end), filters=filters)
+  fname = io.get_filename(prefix, asmt_st, asmt_end, suffix=suffix)
   processed_df = io.process_assment(raw_df)
-  logging.warn(f" To be cached {fname}  ")
-  
-  return processed_df, fname #, str(processed_folder.joinpath(f"{fname}.parquet"))
+  return processed_df, fname
   
 
   # get fresh data for period , process and return with filename for caching

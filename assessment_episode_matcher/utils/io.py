@@ -115,12 +115,12 @@ def get_lastmod_utcstr(timestamp:pd.Series) -> str:
 
 
 def process_assment(asmt_df:pd.DataFrame) -> pd.DataFrame:
-  
+  if asmt_df.empty:
+    return asmt_df
   atom_df = asmt_df.rename(columns={'PartitionKey': 'SLK'})
   atom_df['AssessmentDate'] = convert_float_to_datetime(
                                 atom_df['AssessmentDate']
                                 , format='%Y%m%d')
-  
   return atom_df
 
 
@@ -254,10 +254,14 @@ def load_for_period(file_source:FileSource, st_yyyymmdd: str
 
     # Iterate over the matching files
     for file in matching_files:
-        # Extract the date range from the filename
-        date_range = file.split("_")[1].split(".")[0]
-        file_start_date = datetime.strptime(date_range.split("-")[0], "%Y%m%d")
-        file_end_date = datetime.strptime(date_range.split("-")[1], "%Y%m%d")
+        try:
+            date_range = file.split("_")[1].split(".")[0]
+            parts = date_range.split("-")
+            file_start_date = datetime.strptime(parts[0], "%Y%m%d")
+            file_end_date = datetime.strptime(parts[1], "%Y%m%d")
+        except (IndexError, ValueError):
+            logging.warning(f"load_for_period: skipping file with unrecognised name format: {file}")
+            continue
 
         # Check if the file's date range covers the desired period
         if file_start_date <= start_date and file_end_date >= end_date:

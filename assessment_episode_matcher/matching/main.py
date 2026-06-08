@@ -6,13 +6,10 @@ from assessment_episode_matcher.mytypes import DataKeys as dk, IssueLevel, Issue
 # from utils.environment import MyEnvironmentConfig, ConfigKeys
 import assessment_episode_matcher.utils.df_ops_base as utdf
 from assessment_episode_matcher.utils import base as utbase
-from assessment_episode_matcher.utils import fromstr as utstr
 import assessment_episode_matcher.matching.date_checks as dtchk
 from assessment_episode_matcher.matching import increasing_slack as mis
-from assessment_episode_matcher.configs.constants import MatchingConstants
 
 # from assessment_episode_matcher.setup.bootstrap import Bootstrap
-SLK_MATCH_THRESHOLD = 0.75
 
 def get_data_for_matching2(episode_df, atom_df, start_date:date
                            , end_date:date, slack_for_matching) \
@@ -376,15 +373,6 @@ def fix_incorrect_program( slk_datematched:pd.DataFrame) -> pd.DataFrame:
 
 
 
-def get_closest_slk_match(not_matched, try_match):
-  matches = utstr.find_nearest_matches(unmatched_slks=not_matched
-                                              , database_slks=try_match
-                                              , threshold=SLK_MATCH_THRESHOLD)
-  match_dict = { unmatched: closestmatch 
-                for unmatched, closestmatch, _ in matches if closestmatch }
-  return match_dict
-
-
 def filter_by_date (df:pd.DataFrame, reporting_start, reporting_end) -> pd.DataFrame:
   
   if df.empty:
@@ -402,8 +390,7 @@ def match_and_get_issues(e_df, a_df
                          , inperiod_atomslk_notin_ep
                          , inperiod_epslk_notin_atom
                          , slack_for_matching
-                         , reporting_start:date, reporting_end:date
-                         , config:dict={}):
+                         , reporting_start:date, reporting_end:date):
     """
       Perform Date Matching  - Assessment has to fall within Episode Start and End dates
       Steps: 
@@ -474,18 +461,6 @@ def match_and_get_issues(e_df, a_df
     print(f"\n\t only-in-ATOM: {len(inperiod_atomslk_notin_ep)}  ; only in Episode: {len(inperiod_epslk_notin_atom)} ")    
     slk_onlyin_ep = pd.concat([slk_onlyin_ep, inperiod_epslk_notin_atom])
     
-    if config.get(MatchingConstants.GET_NEAREST_SLK, 0) == 1 and \
-        not slk_onlyinass.empty and not slk_onlyin_ep.empty:
-      slk_onlyinass_uq:pd.Series = pd.Series(slk_onlyinass.SLK.unique()) 
-      slk_onlyinep_uq = slk_onlyin_ep.SLK.unique().tolist()
-  
-      nearest_to_atom_slk_from_ep = get_closest_slk_match( 
-            slk_onlyinass_uq
-              , slk_onlyinep_uq
-              )
-      for not_matched_slk, nearest_match in nearest_to_atom_slk_from_ep.items():
-          slk_onlyinass.loc[slk_onlyinass.SLK == not_matched_slk, 'closest_episode_SLK'] = nearest_match
-
     # no need to do the reverse directions - redundant and CCAR EP SLKs are considered the authority
     
     if not slk_prog_onlyinass.empty:

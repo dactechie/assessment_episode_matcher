@@ -79,9 +79,8 @@ def main3():
                                             , folder_path=asmt_folder)
     atoms_df, atom_cache_to_path = ATOMsImporter.import_data(
                             reporting_start_str, reporting_end_str
-                            , atom_file_source
                             , prefix=asmt_folder, suffix="AllPrograms"
-                            , purpose=Purpose.NADA, refresh=True)
+                            , purpose=Purpose.NADA)
     
     if atom_cache_to_path:
       exp =  ExporterTypes.AzureBlobExporter(container_name=atom_file_source.container_name) #

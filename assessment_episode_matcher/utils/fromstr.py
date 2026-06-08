@@ -1,36 +1,6 @@
 import logging
 import json
 from datetime import datetime, date
-# import difflib
-# from typing import Optional
-
-from rapidfuzz import fuzz
-
-def calculate_similarity(slk1, slk2):
-    # Using ratio method for similarity score
-    return fuzz.ratio(slk1, slk2) / 100
-
-def find_nearest_matches(unmatched_slks, database_slks, threshold=0.5):
-    results = []
-    
-    for u_slk in unmatched_slks:
-        best_match = None
-        best_similarity = -1
-        
-        for d_slk in database_slks:
-            similarity = calculate_similarity(u_slk, d_slk)
-            
-            if similarity > best_similarity:
-                best_match = d_slk
-                best_similarity = similarity
-        
-        if best_similarity >= threshold:
-            results.append((u_slk, best_match, best_similarity))
-        else:
-            results.append((u_slk, None, best_similarity))
-    
-    return results
-
 
 # import numpy as np
 
