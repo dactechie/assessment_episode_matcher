@@ -172,3 +172,5 @@ cython_debug/
 #.idea/
 
 .python_packages
+# NADA golden-master snapshots (characterisation tests) must be committed
+!tests/golden/*.csv

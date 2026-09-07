@@ -1,0 +1,9 @@
+[
+ {
+  "SLK": "",
+  "RowKey": "",
+  "drug_name": "",
+  "field_name": "concat",
+  "field_value": "Error combining results: cannot reindex on an axis with duplicate labels"
+ }
+]
