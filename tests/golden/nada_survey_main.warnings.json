@@ -1,0 +1,51 @@
+[
+ {
+  "SLK": "AAABBB010119901",
+  "RowKey": "rk-0001-b",
+  "drug_name": "PDCSubstanceOrGambling",
+  "field_name": "PDCHowMuchPerOccasion",
+  "field_value": ""
+ },
+ {
+  "SLK": "EEEFFF040419754",
+  "RowKey": "rk-0004-a",
+  "drug_name": "Betel Nut",
+  "field_name": "PDCSubstanceOrGambling",
+  "field_value": ""
+ },
+ {
+  "SLK": "EEEFFF040419754",
+  "RowKey": "rk-0004-a",
+  "drug_name": "OtherSubstancesConcernGambling",
+  "field_name": "HowMuchPerOccasion",
+  "field_value": "Other"
+ },
+ {
+  "SLK": "EEEFFF040419754",
+  "RowKey": "rk-0004-a",
+  "drug_name": "Yerba Mate",
+  "field_name": "OtherSubstancesConcernGambling",
+  "field_value": ""
+ },
+ {
+  "SLK": "BBBCCC020219852",
+  "RowKey": "rk-0002-a",
+  "drug_name": "Kava",
+  "field_name": "OtherSubstancesConcernGambling",
+  "field_value": ""
+ },
+ {
+  "SLK": "BBBCCC020219852",
+  "RowKey": "rk-0002-a",
+  "drug_name": "Kratom",
+  "field_name": "OtherSubstancesConcernGambling",
+  "field_value": ""
+ },
+ {
+  "SLK": "DDDEEE030319803",
+  "RowKey": "rk-0003-a",
+  "drug_name": "",
+  "field_name": "structure",
+  "field_value": "Invalid structure - missing required fields"
+ }
+]
